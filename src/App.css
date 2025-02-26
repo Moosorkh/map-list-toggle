@@ -36,3 +36,60 @@
     transform: rotate(360deg);
   }
 }
+
+.leaflet-popup-content-wrapper {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.leaflet-popup-content {
+  margin: 8px;
+}
+
+.place-card {
+  margin: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.12);
+  overflow: hidden; /* Ensures the image corners are also rounded */
+}
+
+.place-card:hover {
+  box-shadow: 0 6px 8px rgba(0,0,0,0.12);
+  scale: 1.02;
+}
+
+.popup {
+  min-width: 200px;
+}
+
+.toggle-button {
+  background-color: #FF385C; /* Airbnb's red color */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 50px; /* Circular button */
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: fixed; /* Fixed at the bottom center */
+  bottom: 20px;
+  left: 50%; /* Center the button horizontally */
+  transform: translateX(-50%); /* Precisely center the button */
+  z-index: 1000; /* Ensure it's above other elements */
+}
+
+.toggle-button:hover {
+  background-color: #e61e4d;  /* A darker shade of red for hover */
+}
+
+.search-bar {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

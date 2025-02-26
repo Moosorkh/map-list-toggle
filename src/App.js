@@ -1,23 +1,23 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import MapView from './components/MapView';
+import ListView from './components/ListView';
+import SearchBar from './components/SearchBar';
+import { places } from './data/places';
 import './App.css';
 
 function App() {
+  const [view, setView] = useState('list');
+  const [displayedPlaces, setDisplayedPlaces] = useState(places);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <SearchBar places={places} onUpdatePlaces={setDisplayedPlaces} />
+      <div className="content">
+        {view === 'map' ? <MapView places={displayedPlaces} /> : <ListView places={displayedPlaces} />}
+      </div>
+      <button className="toggle-button" onClick={() => setView(view === 'map' ? 'list' : 'map')}>
+        {view === 'map' ? 'Show List' : 'Show Map'}
+      </button>
     </div>
   );
 }
