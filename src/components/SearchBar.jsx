@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-const SearchBar = ({ places, onUpdatePlaces }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    const filtered = places.filter(place =>
-      place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      place.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    onUpdatePlaces(filtered);
-  }, [searchTerm, places, onUpdatePlaces]);
-
+const SearchBar = ({ value, onChange }) => {
   return (
-    <input
-      type="text"
-      placeholder="Search for places..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="search-bar"
-    />
+    <div className="search-container">
+      <input
+        type="text"
+        placeholder="Search for places..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="search-bar"
+      />
+      {value && (
+        <button 
+          className="clear-search"
+          onClick={() => onChange('')}
+          aria-label="Clear search"
+        >
+          ×
+        </button>
+      )}
+    </div>
   );
 };
 
