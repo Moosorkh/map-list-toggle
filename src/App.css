@@ -1,3 +1,53 @@
+/* Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Search bar and location selector container */
+.app-header {
+  background-color: white;
+  padding: 12px 16px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Content container */
+.content {
+  flex: 1;
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Map container */
+#map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
 /* Place Switcher */
 .list-and-switcher {
   display: flex;
@@ -12,6 +62,7 @@
   border-right: 1px solid #ddd;
   overflow-y: auto;
   height: 100vh;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .place-switcher h3 {
@@ -29,26 +80,28 @@
 
 .location-card {
   background-color: white;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .location-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .location-card.active {
   border-left: 4px solid #FF385C;
+  background-color: #fff5f6;
 }
 
 .location-card h4 {
   margin-top: 0;
   margin-bottom: 8px;
   font-size: 16px;
+  font-weight: 600;
 }
 
 .location-meta {
@@ -65,13 +118,15 @@
 /* List view adjustments for sidebar */
 .list-and-switcher .place-card-container {
   flex-grow: 1;
-}/* Location selector */
+}
+
+/* Location selector */
 .location-selector-container {
   background-color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 12px;
+  padding: 8px 12px;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin: 12px 0;
   display: flex;
   align-items: center;
   z-index: 990;
@@ -79,18 +134,25 @@
 
 .location-selector-container label {
   margin-right: 8px;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
+  white-space: nowrap;
 }
 
 .location-selector {
-  padding: 8px;
-  border-radius: 4px;
+  padding: 8px 12px;
+  border-radius: 20px;
   border: 1px solid #ddd;
   background-color: white;
   font-size: 14px;
   color: #333;
   flex-grow: 1;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF385C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 30px;
 }
 
 .location-selector:focus {
@@ -103,8 +165,8 @@
   background-color: #FF385C;
   color: white;
   border: none;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   margin-left: 10px;
   font-size: 18px;
@@ -122,7 +184,14 @@
 /* ListView container */
 .list-view-container {
   width: 100%;
-}.App {
+  height: 100vh;
+  padding-top: 130px; /* Space for header */
+  padding-bottom: 70px; /* Space for footer */
+  overflow-y: auto;
+  background-color: #f7f7f7;
+}
+
+.App {
   text-align: center;
 }
 
@@ -164,41 +233,99 @@
 /* Map styles */
 .leaflet-popup-content-wrapper {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  min-width: 200px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  min-width: 220px;
+  border: none;
 }
 
 .leaflet-popup-content {
-  margin: 12px;
-  font-family: Arial, sans-serif;
+  margin: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .popup strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 16px;
   color: #222;
+  font-weight: 600;
 }
 
 .popup p {
-  margin: 6px 0;
+  margin: 8px 0;
   color: #555;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Google Maps-like styles */
+.leaflet-container {
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #f8f8f8; /* Google Maps background color */
+}
+
+/* Google Maps style controls */
+.leaflet-control-zoom {
+  border-radius: 4px !important;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  margin-right: 10px !important;
+  margin-bottom: 24px !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: white !important;
+  color: #666 !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  font-size: 18px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #FF385C;
+  font-weight: 400;
+  font-size: 20px;
+  padding: 8px;
+  top: 8px;
+  right: 8px;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #e61e4d;
+  background: transparent;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f4f4f4 !important;
+  color: #333 !important;
+}
+
+.leaflet-control-zoom-in {
+  border-bottom: 1px solid #f0f0f0 !important;
 }
 
 /* Place card styles */
 .place-card {
   margin: 10px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   overflow: hidden; /* Ensures the image corners are also rounded */
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.3s, box-shadow 0.3s;
   cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
 .place-card:hover {
-  box-shadow: 0 6px 8px rgba(0,0,0,0.16);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
   transform: translateY(-4px) scale(1.01);
 }
 
@@ -216,28 +343,69 @@
   background-color: #FF385C; /* Airbnb's red color */
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 16px;
   font-weight: bold;
   border-radius: 50px; /* Circular button */
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   position: fixed; /* Fixed at the bottom center */
   bottom: 20px;
   left: 50%; /* Center the button horizontally */
   transform: translateX(-50%); /* Precisely center the button */
   z-index: 1000; /* Ensure it's above other elements */
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .toggle-button:hover {
   background-color: #e61e4d;  /* A darker shade of red for hover */
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-button:active {
+  transform: translateX(-50%) translateY(0);
+}
+
+.discover-button {
+  background-color: #FF385C;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discover-button:hover {
+  background-color: #e61e4d;
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.discover-button:active {
+  transform: translateX(-50%) translateY(0);
+}
+
+.discover-button span {
+  margin-left: 8px;
 }
 
 /* Search container styles */
 .search-container {
   position: relative;
-  margin: 16px;
+  margin-bottom: 12px;
   z-index: 1000;
 }
 
@@ -247,14 +415,14 @@
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 24px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .search-bar:focus {
   outline: none;
   border-color: #FF385C;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 
 .clear-search {
@@ -281,20 +449,39 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  margin: 8px 0;
+  margin: 8px 0 16px;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
 }
 
 .sort-controls select {
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 20px;
   border: 1px solid #ddd;
   background-color: white;
   margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF385C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 30px;
+}
+
+.sort-controls select:focus {
+  outline: none;
+  border-color: #FF385C;
 }
 
 .results-count {
   color: #555;
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* Place counter */
@@ -303,12 +490,29 @@
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   z-index: 999;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Empty state overlay */
+.empty-state-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 100;
+  padding-top: 80px; /* Space for header */
 }
 
 /* Empty state */
@@ -320,11 +524,23 @@
   padding: 40px;
   color: #777;
   text-align: center;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
 }
 
 .empty-state p {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   font-size: 18px;
+  font-weight: 500;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: float 2s ease-in-out infinite;
 }
 
 /* Discovery overlay */
@@ -333,12 +549,26 @@
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 10px 20px;
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 12px 24px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   z-index: 1000;
   animation: pulse 1.5s infinite;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.discovering-overlay::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: #FF385C;
+  border-radius: 50%;
+  margin-right: 10px;
+  animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
@@ -350,7 +580,7 @@
 /* Location indicator */
 .location-indicator {
   position: fixed;
-  top: 70px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -362,9 +592,9 @@
   background-color: #FF385C;
   color: white;
   padding: 8px 16px;
-  border-radius: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  font-weight: bold;
+  border-radius: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  font-weight: 500;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -377,6 +607,7 @@
   color: #FF385C;
   padding: 2px 8px;
   border-radius: 10px;
+  font-weight: 600;
 }
 
 /* Place Details Modal */
@@ -395,31 +626,38 @@
 
 .place-details-container {
   background-color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
 
 .close-button {
   position: absolute;
   top: 16px;
   right: 16px;
-  background-color: rgba(255,255,255,0.8);
+  background-color: rgba(255,255,255,0.9);
   border: none;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 2100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  color: #FF385C;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background-color: white;
+  transform: scale(1.1);
 }
 
 .place-details-content {
@@ -429,24 +667,26 @@
 
 .place-details-image {
   width: 100%;
-  height: 300px;
+  height: 350px;
   object-fit: cover;
-  border-radius: 12px 12px 0 0;
+  border-radius: 16px 16px 0 0;
 }
 
 .place-details-info {
-  padding: 24px;
+  padding: 32px;
 }
 
 .place-details-info h2 {
   margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 24px;
+  margin-bottom: 16px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
 }
 
 .place-description {
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #555;
   margin-bottom: 24px;
 }
@@ -454,12 +694,14 @@
 .place-meta {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .price-tag {
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #222;
 }
 
 .coordinates {
@@ -467,37 +709,53 @@
   flex-direction: column;
   font-size: 14px;
   color: #666;
+  background-color: #f8f8f8;
+  padding: 12px;
+  border-radius: 10px;
 }
 
 .discovery-badge {
   display: inline-block;
   background-color: #4CAF50;
   color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 500;
   align-self: flex-start;
 }
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
 }
 
 .action-button {
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .action-button.primary {
   background-color: #FF385C;
   color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(255, 56, 92, 0.3);
+}
+
+.action-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 56, 92, 0.4);
 }
 
 .action-button.secondary {
@@ -506,22 +764,226 @@
 }
 
 .action-button:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 @media (min-width: 768px) {
   .place-details-content {
     flex-direction: row;
+    max-height: 80vh;
   }
   
   .place-details-image {
     width: 50%;
     height: auto;
-    max-height: 500px;
-    border-radius: 12px 0 0 12px;
+    max-height: 80vh;
+    border-radius: 16px 0 0 16px;
+    object-fit: cover;
   }
   
   .place-details-info {
     width: 50%;
+    overflow-y: auto;
+    max-height: 80vh;
+  }
+  
+  .list-view-container {
+    padding-top: 80px;
+  }
+  
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .search-container {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+/* Loading animation */
+.loading-spinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 56, 92, 0.2);
+  border-radius: 50%;
+  border-top-color: #FF385C;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@-webkit-keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Mobile-friendly styles */
+@media (max-width: 768px) {
+  /* App header */
+  .app-header {
+    flex-direction: column;
+    padding: 8px 12px;
+  }
+  
+  .search-container {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .search-bar {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+  
+  /* Location selector */
+  .location-selector-container {
+    width: 100%;
+  }
+  
+  /* Map view adjustments */
+  .discover-button {
+    bottom: 120px;
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  
+  .toggle-button {
+    bottom: 70px;
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  
+  .place-counter {
+    bottom: 25px;
+    font-size: 12px;
+  }
+  
+  .location-indicator {
+    top: 140px;
+    font-size: 12px;
+  }
+  
+  /* List view adjustments */
+  .place-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 12px;
+  }
+  
+  .list-view-container {
+    padding-top: 180px; /* More space for stacked header elements */
+  }
+  
+  .list-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .results-count {
+    align-self: flex-end;
+  }
+  
+  /* Place details modal */
+  .place-details-container {
+    width: 95%;
+    max-width: 95%;
+  }
+  
+  .place-details-content {
+    flex-direction: column !important; /* Override any media query in the component */
+  }
+  
+  .place-details-image {
+    width: 100% !important;
+    height: 250px !important;
+    max-height: 30vh !important;
+  }
+  
+  .place-details-info {
+    width: 100% !important;
+    padding: 20px !important;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .action-button {
+    width: 100%;
+  }
+}
+
+/* Adjustments for very small screens */
+@media (max-width: 480px) {
+  .discover-button {
+    bottom: 100px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .toggle-button {
+    bottom: 60px;
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+  
+  .sort-select {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .place-title {
+    font-size: 16px !important;
+  }
+  
+  .place-description {
+    font-size: 13px !important;
+  }
+}
+
+/* Enhanced touch targets for mobile */
+@media (pointer: coarse) {
+  button, 
+  .popup-details-button,
+  .view-details-button,
+  .sort-select,
+  .search-bar {
+    min-height: 44px; /* Apple's recommended minimum touch target size */
+  }
+  
+  .leaflet-control-zoom a {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+  }
+}
+
+/* Ensure map takes full height on mobile */
+#map {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Fix for iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .content, 
+  .list-view-container, 
+  #map {
+    height: -webkit-fill-available !important;
   }
 }

@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import MapView from './components/MapView';
-import ListView from './components/ListView';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import SearchBar from './components/SearchBar';
-import PlaceDetails from './components/PlaceDetails';
 import LocationSelector from './components/LocationSelector';
-import PlaceSwitcher from './components/PlaceSwitcher';
 import { places as initialPlaces } from './data/places';
 import GeocodingService from './services/GeocodingService';
 import locationManager from './services/LocationManager';
 import './App.css';
 
+// Lazy load components
+const MapView = lazy(() => import('./components/MapView'));
+const ListView = lazy(() => import('./components/ListView'));
+const PlaceDetails = lazy(() => import('./components/PlaceDetails'));
+const PlaceSwitcher = lazy(() => import('./components/PlaceSwitcher'));
+
+// Loading component
+const LoadingView = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh',
+    fontSize: '18px',
+    color: '#FF385C'
+  }}>
+    <div className="loading-spinner"></div>
+    <div style={{ marginLeft: '12px' }}>Loading...</div>
+  </div>
+);
+
 function App() {
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('map'); // Start with map view
   const [allPlaces, setAllPlaces] = useState([]);
   const [displayedPlaces, setDisplayedPlaces] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,28 +37,50 @@ function App() {
   const [locations, setLocations] = useState([]);
   const [currentLocationId, setCurrentLocationId] = useState(null);
   const [mapState, setMapState] = useState({
-    center: [33.6595, -117.9988],
+    center: [34.0522, -118.2437], // Los Angeles as default center
     zoom: 10,
     bounds: null
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [discoveredPlaces, setDiscoveredPlaces] = useState([]);
+  const [discoveryInProgress, setDiscoveryInProgress] = useState(false);
   
-  // Initialize with the default Southern California location
+  // Initialize the app
   useEffect(() => {
-    // Add initial places to the location manager
-    const initialLocationId = locationManager.addLocation(
-      'Southern California', 
-      [33.6595, -117.9988], 
-      initialPlaces
-    );
+    const initializeApp = async () => {
+      // Clean up any existing empty locations
+      locationManager.cleanupEmptyLocations();
+      
+      // Check if we already have locations
+      const existingLocations = locationManager.getAllLocations();
+      
+      if (existingLocations.length > 0) {
+        // Use the first location (most recent)
+        const firstLocation = existingLocations[0];
+        setCurrentLocationId(firstLocation.id);
+        setAllPlaces(firstLocation.places);
+        setDisplayedPlaces(firstLocation.places);
+        setCurrentLocation(firstLocation.name);
+      } else {
+        // Create a default "California" location with no places
+        const initialLocationId = locationManager.addLocation(
+          'California', 
+          [34.0522, -118.2437], // Los Angeles as default center
+          [] // No initial places
+        );
+        
+        setCurrentLocationId(initialLocationId);
+        setAllPlaces([]);
+        setDisplayedPlaces([]);
+        setCurrentLocation('California');
+      }
+      
+      // Update locations list
+      setLocations(locationManager.getAllLocations());
+      setIsLoading(false);
+    };
     
-    // Update state
-    setCurrentLocationId(initialLocationId);
-    setAllPlaces(initialPlaces);
-    setDisplayedPlaces(initialPlaces);
-    setCurrentLocation('Southern California');
-    
-    // Update locations list
-    setLocations(locationManager.getAllLocations());
+    initializeApp();
   }, []);
   
   // When current location changes, update places
@@ -66,9 +105,6 @@ function App() {
       }
     }
   }, [currentLocationId, searchTerm]);
-  
-  // Store discovered places separately to manage them differently
-  const [discoveredPlaces, setDiscoveredPlaces] = useState([]);
   
   // Filter places based on search term
   useEffect(() => {
@@ -114,64 +150,87 @@ function App() {
   };
   
   // Handle discovery of new places
-  const handleDiscoverPlaces = (newPlaces, locationData) => {
-    if (!newPlaces || newPlaces.length === 0) return;
+  const handleDiscoverPlaces = async (newPlaces, locationData) => {
+    // Guard against empty places or discovery in progress
+    if (!newPlaces || newPlaces.length === 0 || discoveryInProgress) return;
     
-    // Extract location information from the reverse geocoding response
-    let locationName = "New Area";
-    if (locationData) {
-      // Nominatim returns different address formats, try to get something useful
-      if (locationData.address) {
-        const address = locationData.address;
-        locationName = address.city || address.town || address.village || 
-                      address.county || address.state || "New Area";
-      } else if (locationData.display_name) {
-        locationName = locationData.display_name.split(',')[0];
+    setDiscoveryInProgress(true);
+    
+    try {
+      // Extract location information from the reverse geocoding response
+      let locationName = "California";
+      if (locationData) {
+        if (locationData.address) {
+          const address = locationData.address;
+          locationName = address.city || address.town || address.village || 
+                        address.county || address.state || "California";
+        } else if (locationData.display_name) {
+          // Get first part of display name
+          locationName = locationData.display_name.split(',')[0];
+        }
       }
-    }
-    
-    // Check if we're already in this location
-    const currentLoc = locationManager.getCurrentLocation();
-    
-    // If the current location has the same name, add places to it
-    if (currentLoc && currentLoc.name === locationName) {
-      // Add new places to the current location
-      locationManager.addPlacesToLocation(currentLoc.id, newPlaces);
       
-      // Update the displayed locations
-      setLocations(locationManager.getAllLocations());
+      console.log(`Discovered ${newPlaces.length} places in ${locationName}`);
       
-      // Update allPlaces with the newly discovered places
-      setAllPlaces(currentLoc.places);
+      // Create a distinct location in our data model if it doesn't exist
+      // First check if we already have a location with this name
+      const existingLocation = locations.find(loc => loc.name === locationName);
       
-      // Update discoveredPlaces for UI indicators
-      setDiscoveredPlaces(prev => [...prev, ...newPlaces]);
-      
-      // Update displayed places if not in search mode
-      if (!searchTerm) {
-        setDisplayedPlaces(currentLoc.places);
+      if (existingLocation) {
+        // Add new places to existing location - no duplicates
+        const existingPlaceIds = new Set(existingLocation.places.map(p => p.id));
+        const uniqueNewPlaces = newPlaces.filter(p => !existingPlaceIds.has(p.id));
+        
+        if (uniqueNewPlaces.length === 0) {
+          console.log('No new unique places to add');
+          setDiscoveryInProgress(false);
+          return;
+        }
+        
+        // Add places to existing location
+        locationManager.addPlacesToLocation(existingLocation.id, uniqueNewPlaces);
+        
+        // Update state
+        setLocations(locationManager.getAllLocations());
+        setAllPlaces([...existingLocation.places, ...uniqueNewPlaces]);
+        setDiscoveredPlaces(uniqueNewPlaces);
+        
+        // If this is the current location, update displayed places
+        if (existingLocation.id === currentLocationId) {
+          if (!searchTerm) {
+            setDisplayedPlaces([...existingLocation.places, ...uniqueNewPlaces]);
+          } else {
+            // Apply search filter to combined places
+            const combined = [...existingLocation.places, ...uniqueNewPlaces];
+            const filtered = combined.filter(place =>
+              place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              place.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setDisplayedPlaces(filtered);
+          }
+        }
       } else {
-        // Filter based on search term
-        const filtered = currentLoc.places.filter(place =>
-          place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          place.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setDisplayedPlaces(filtered);
+        // New location - add it to the manager with limited places (max 5)
+        const limitedPlaces = newPlaces.slice(0, 5);
+        const center = mapState.center || [34.0522, -118.2437];
+        const newLocationId = locationManager.addLocation(locationName, center, limitedPlaces);
+        
+        // Update app state
+        setCurrentLocationId(newLocationId);
+        setCurrentLocation(locationName);
+        setAllPlaces(limitedPlaces);
+        setDisplayedPlaces(limitedPlaces);
+        setDiscoveredPlaces(limitedPlaces);
+        setLocations(locationManager.getAllLocations());
       }
-    } else {
-      // This is a new location - add it to the location manager
-      const center = mapState.center;
-      const newLocationId = locationManager.addLocation(locationName, center, newPlaces);
       
-      // Update the UI state
-      setCurrentLocationId(newLocationId);
-      setCurrentLocation(locationName);
-      setAllPlaces(newPlaces);
-      setDisplayedPlaces(newPlaces);
-      setDiscoveredPlaces(newPlaces);
-      
-      // Update the locations list
+      // Clean up any empty locations that might exist
+      locationManager.cleanupEmptyLocations();
       setLocations(locationManager.getAllLocations());
+    } catch (error) {
+      console.error('Error handling discovered places:', error);
+    } finally {
+      setDiscoveryInProgress(false);
     }
   };
   
@@ -222,6 +281,9 @@ function App() {
     // Remove the location
     locationManager.removeLocation(locationId);
     
+    // Clean up empty locations
+    locationManager.cleanupEmptyLocations();
+    
     // Update the state with remaining locations
     setLocations(locationManager.getAllLocations());
     
@@ -234,23 +296,42 @@ function App() {
       setAllPlaces(currentLocation.places);
       setDisplayedPlaces(currentLocation.places);
       setCurrentLocation(currentLocation.name);
+    } else {
+      // If no locations with places, create a new default location
+      const initialLocationId = locationManager.addLocation(
+        'California', 
+        [34.0522, -118.2437],
+        []
+      );
+      
+      setCurrentLocationId(initialLocationId);
+      setAllPlaces([]);
+      setDisplayedPlaces([]);
+      setCurrentLocation('California');
+      setLocations(locationManager.getAllLocations());
     }
   };
   
+  if (isLoading) {
+    return <LoadingView />;
+  }
+  
   return (
     <div className="app">
-      <SearchBar 
-        value={searchTerm}
-        onChange={setSearchTerm}
-      />
-      
-      {/* Location selector */}
-      <LocationSelector 
-        locations={locations}
-        currentLocationId={currentLocationId}
-        onLocationChange={handleLocationChange}
-        onDeleteLocation={handleDeleteLocation}
-      />
+      <div className="app-header">
+        <SearchBar 
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        
+        {/* Location selector */}
+        <LocationSelector 
+          locations={locations}
+          currentLocationId={currentLocationId}
+          onLocationChange={handleLocationChange}
+          onDeleteLocation={handleDeleteLocation}
+        />
+      </div>
       
       {/* Current location indicator */}
       {currentLocation && view === 'map' && (
@@ -267,23 +348,26 @@ function App() {
       )}
       
       <div className="content">
-        {view === 'map' ? (
-          <MapView 
-            places={searchTerm ? displayedPlaces : allPlaces} 
-            onViewportChange={handleViewportChange}
-            onDiscoverPlaces={handleDiscoverPlaces}
-            currentLocationId={currentLocationId}
-          />
-        ) : (
-          <ListView 
-            places={displayedPlaces}
-            onSelectPlace={handleSelectPlace}
-          />
-        )}
+        <Suspense fallback={<LoadingView />}>
+          {view === 'map' ? (
+            <MapView 
+              places={searchTerm ? displayedPlaces : allPlaces} 
+              onViewportChange={handleViewportChange}
+              onDiscoverPlaces={handleDiscoverPlaces}
+              onSelectPlace={handleSelectPlace}
+              currentLocationId={currentLocationId}
+            />
+          ) : (
+            <ListView 
+              places={displayedPlaces}
+              onSelectPlace={handleSelectPlace}
+            />
+          )}
+        </Suspense>
       </div>
       
       {/* Toggle button */}
-      <button className="toggle-button" onClick={() => toggleView()}>
+      <button className="toggle-button" onClick={toggleView}>
         {view === 'map' ? 'Show List' : 'Show Map'}
       </button>
       
@@ -292,12 +376,30 @@ function App() {
         {displayedPlaces.length} of {allPlaces.length} places shown
       </div>
       
+      {/* Empty state for list view */}
+      {view === 'list' && displayedPlaces.length === 0 && (
+        <div className="empty-state-overlay">
+          <div className="empty-state">
+            <div className="empty-state-icon">🏠</div>
+            <p>No luxury properties found</p>
+            <p style={{ fontSize: '14px', color: '#999', marginBottom: '20px' }}>
+              Try exploring the map to discover luxury properties in different areas.
+            </p>
+            <button className="action-button primary" onClick={toggleView}>
+              Switch to Map View
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Place details modal */}
       {selectedPlace && (
-        <PlaceDetails 
-          place={selectedPlace} 
-          onClose={handleCloseDetails}
-        />
+        <Suspense fallback={<LoadingView />}>
+          <PlaceDetails 
+            place={selectedPlace} 
+            onClose={handleCloseDetails}
+          />
+        </Suspense>
       )}
     </div>
   );

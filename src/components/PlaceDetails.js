@@ -13,6 +13,7 @@ const PlaceDetails = ({ place, onClose }) => {
           <img 
             src={place.imageUrl} 
             alt={place.name} 
+            loading="lazy" // Add lazy loading
             className="place-details-image" 
           />
           
