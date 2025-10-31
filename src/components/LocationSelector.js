@@ -98,7 +98,7 @@ const LocationSelector = ({ locations, currentLocationId, onLocationChange, onDe
         </div>
       )}
       
-      <style jsx>{`
+  <style>{`
         .location-selector-container {
           position: relative;
           min-width: 220px;
@@ -232,7 +232,7 @@ const LocationSelector = ({ locations, currentLocationId, onLocationChange, onDe
         .location-option:hover .delete-location-button {
           opacity: 1;
         }
-      `}</style>
+  `}</style>
     </div>
   );
 };
