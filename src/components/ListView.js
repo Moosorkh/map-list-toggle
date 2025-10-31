@@ -1,120 +1,96 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import PlaceCard from './PlaceCard';
-
-// Helper function to deduplicate places
-const deduplicatePlaces = (placesArray) => {
-  const uniquePlaces = new Map();
-  
-  // Keep only one instance of each place ID
-  placesArray.forEach(place => {
-    if (!uniquePlaces.has(place.id)) {
-      uniquePlaces.set(place.id, place);
-    } else {
-      console.warn(`Skipping duplicate place ID in ListView: ${place.id}`);
-    }
-  });
-  
-  return Array.from(uniquePlaces.values());
-};
+import BookingModal from './BookingModal';
+import { deduplicatePlaces, sortPlaces } from '../utils/placeUtils';
+import { throttle } from '../utils/performanceUtils';
 
 const ListView = ({ places, onSelectPlace }) => {
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [visiblePlaces, setVisiblePlaces] = useState([]);
+  const [bookingPlace, setBookingPlace] = useState(null);
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   const listContainerRef = useRef(null);
   const [loadedAll, setLoadedAll] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
-  
+
   // Handle card click
   const handlePlaceClick = (place) => {
     setSelectedPlaceId(place.id === selectedPlaceId ? null : place.id);
-    
+
     // Call the parent's onSelectPlace function if provided
     if (onSelectPlace) {
       onSelectPlace(place);
     }
   };
-  
+
+  // Handle booking
+  const handleBookClick = (place) => {
+    setBookingPlace(place);
+  };
+
   // Sort places by price (low to high by default)
   const [sortOrder, setSortOrder] = useState('price-asc');
-  
-  const getSortedPlaces = () => {
-    // First deduplicate the places array
-    const uniquePlaces = deduplicatePlaces(places);
-    
-    switch(sortOrder) {
-      case 'price-asc':
-        return [...uniquePlaces].sort((a, b) => a.price - b.price);
-      case 'price-desc':
-        return [...uniquePlaces].sort((a, b) => b.price - a.price);
-      case 'name-asc':
-        return [...uniquePlaces].sort((a, b) => a.name.localeCompare(b.name));
-      default:
-        return uniquePlaces;
-    }
-  };
-  
-  // Setup scroll handler for infinite loading
-  useEffect(() => {
-    const handleScroll = () => {
+
+  // Memoize deduplicated and sorted places to prevent redundant calculations
+  const memoizedPlaces = useMemo(() => {
+    const deduplicated = deduplicatePlaces(places);
+    return sortPlaces(deduplicated, sortOrder);
+  }, [places, sortOrder]);
+
+  // Throttled scroll handler for better performance
+  const handleScroll = useCallback(
+    throttle(() => {
       if (!listContainerRef.current) return;
-      
+
       const container = listContainerRef.current;
       const scrollBottom = container.scrollTop + container.clientHeight;
       const scrollPercent = scrollBottom / container.scrollHeight;
-      
-      // If user has scrolled past 80% of current content, load more
-      if (scrollPercent > 0.8 && visiblePlaces.length < getSortedPlaces().length && !loadedAll) {
-        console.log("Loading more places...");
-        const sortedPlaces = getSortedPlaces();
-        const newVisibleCount = Math.min(visiblePlaces.length + 4, sortedPlaces.length);
-        setVisiblePlaces(sortedPlaces.slice(0, newVisibleCount));
-        setLoadedAll(newVisibleCount >= sortedPlaces.length);
-      }
-    };
 
+      // If user has scrolled past 80% of current content, load more
+      if (scrollPercent > 0.8 && visiblePlaces.length < memoizedPlaces.length && !loadedAll) {
+        const newVisibleCount = Math.min(visiblePlaces.length + 4, memoizedPlaces.length);
+        setVisiblePlaces(memoizedPlaces.slice(0, newVisibleCount));
+        setLoadedAll(newVisibleCount >= memoizedPlaces.length);
+      }
+    }, 200), // Throttle to once every 200ms
+    [visiblePlaces, memoizedPlaces, loadedAll]
+  );
+
+  // Setup scroll handler for infinite loading
+  useEffect(() => {
     const containerElement = listContainerRef.current;
+
     if (containerElement) {
       containerElement.addEventListener('scroll', handleScroll);
     }
-    
+
     return () => {
       if (containerElement) {
         containerElement.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [places, visiblePlaces, loadedAll]);
-  
+  }, [handleScroll]);
+
   // Initial load and when places or sort order changes
   useEffect(() => {
-    const sortedPlaces = getSortedPlaces();
-    
-    // Reset for new data
-    setInitialLoad(true);
-    
     // Initial load shows fewer places
-    const initialCount = Math.min(9, sortedPlaces.length);
-    setVisiblePlaces(sortedPlaces.slice(0, initialCount));
-    setLoadedAll(initialCount >= sortedPlaces.length);
-    
-    // Small delay to allow DOM to update before setting initialLoad to false
-    setTimeout(() => {
-      setInitialLoad(false);
-    }, 100);
-  }, [places, sortOrder]);
-  
-  // Get deduplicated visible places for rendering
-  const uniqueVisiblePlaces = deduplicatePlaces(visiblePlaces);
-  
+    const initialCount = Math.min(9, memoizedPlaces.length);
+    setVisiblePlaces(memoizedPlaces.slice(0, initialCount));
+    setLoadedAll(initialCount >= memoizedPlaces.length);
+  }, [memoizedPlaces]);
+
+  // Get deduplicated visible places for rendering - no need for another dedup since memoizedPlaces is already deduplicated
+  const visiblePlacesToRender = visiblePlaces;
+
   return (
-    <div 
-      className="list-view-container" 
+    <div
+      className="list-view-container"
       ref={listContainerRef}
     >
       {/* Sorting controls */}
       <div className="list-controls">
         <div className="sort-controls">
           <label htmlFor="sort-select">Sort by:</label>
-          <select 
+          <select
             id="sort-select"
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
@@ -126,13 +102,13 @@ const ListView = ({ places, onSelectPlace }) => {
           </select>
         </div>
         <div className="results-count">
-          {uniqueVisiblePlaces.length} {uniqueVisiblePlaces.length !== 1 ? 'properties' : 'property'} found
+          {visiblePlacesToRender.length} {visiblePlacesToRender.length !== 1 ? 'properties' : 'property'} found
         </div>
       </div>
-      
+
       {/* Places grid with virtualization */}
       <div className="place-cards-grid">
-        {uniqueVisiblePlaces.map((place, index) => (
+        {visiblePlacesToRender.map((place, index) => (
           <div
             key={`${place.id}_${index}`}
             className="card-animation-container"
@@ -141,17 +117,18 @@ const ListView = ({ places, onSelectPlace }) => {
               animation: `fadeIn 0.5s ease forwards ${index * 0.1}s`
             }}
           >
-            <PlaceCard 
-              place={place} 
+            <PlaceCard
+              place={place}
               onClick={handlePlaceClick}
+              onBook={handleBookClick}
               isSelected={selectedPlaceId === place.id}
             />
           </div>
         ))}
       </div>
-      
+
       {/* Load more indicator */}
-      {!loadedAll && uniqueVisiblePlaces.length < getSortedPlaces().length && (
+      {!loadedAll && visiblePlacesToRender.length < memoizedPlaces.length && (
         <div className="load-more-indicator">
           <div className="loading-dot-container">
             <div className="loading-dot"></div>
@@ -161,9 +138,9 @@ const ListView = ({ places, onSelectPlace }) => {
           <div>Scroll to load more luxury properties...</div>
         </div>
       )}
-      
+
       {/* Empty state */}
-      {uniqueVisiblePlaces.length === 0 && (
+      {visiblePlacesToRender.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-icon">🏠</div>
           <p>No luxury properties match your current search criteria.</p>
@@ -279,6 +256,54 @@ const ListView = ({ places, onSelectPlace }) => {
           margin-bottom: 16px;
         }
       `}</style>
+
+      {/* Booking Modal */}
+      {bookingPlace && (
+        <BookingModal
+          place={bookingPlace}
+          onClose={() => setBookingPlace(null)}
+          onConfirm={(booking) => {
+            setBookingPlace(null);
+            setShowBookingSuccess(true);
+            setTimeout(() => setShowBookingSuccess(false), 5000);
+          }}
+        />
+      )}
+
+      {/* Booking Success Notification */}
+      {showBookingSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+          color: 'white',
+          padding: '16px 24px',
+          borderRadius: '16px',
+          boxShadow: '0 10px 40px rgba(16, 185, 129, 0.4)',
+          zIndex: 10001,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          animation: 'slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '20px',
+            fontWeight: 'bold'
+          }}>✓</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '2px' }}>Booking Confirmed!</div>
+            <div style={{ fontSize: '13px', opacity: 0.95 }}>Your luxury stay has been reserved</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

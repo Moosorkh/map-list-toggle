@@ -1,0 +1,450 @@
+/* MapView Popup Styles - Modern Luxury Design */
+.custom-popup {
+  width: 300px;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+}
+
+.popup-image-container {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.popup-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.popup-image:hover {
+  transform: scale(1.08);
+}
+
+.popup-new-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(255, 56, 92, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  animation: pulseTag 2s infinite;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes pulseTag {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(255, 56, 92, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 56, 92, 0.7);
+  }
+}
+
+.popup-content {
+  padding: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+}
+
+.popup-title {
+  margin: 0 0 10px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.3px;
+}
+
+.popup-description {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.popup-price {
+  font-weight: 800;
+  font-size: 20px;
+  color: #ff385c;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+.popup-buttons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.popup-details-button,
+.popup-book-button {
+  flex: 1;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-details-button {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.popup-details-button:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(107, 114, 128, 0.4);
+}
+
+.popup-book-button {
+  background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+  box-shadow: 0 4px 15px rgba(255, 56, 92, 0.3);
+}
+
+.popup-book-button:hover {
+  background: linear-gradient(135deg, #e61e4d 0%, #c2123e 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(255, 56, 92, 0.4);
+}
+
+.popup-details-button:active,
+.popup-book-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  width: 300px !important;
+}
+
+.leaflet-popup-close-button {
+  z-index: 10;
+  color: #555 !important;
+  opacity: 0.8;
+  font-size: 24px !important;
+  padding: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  text-shadow: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaflet-popup-close-button:hover {
+  opacity: 1;
+  background: #ff385c !important;
+  color: white !important;
+  transform: rotate(90deg);
+}
+
+/* Custom SVG Marker Styles - Modern Luxury */
+.luxury-marker-svg {
+  background: transparent !important;
+  border: none !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.luxury-marker-svg:hover {
+  transform: translateY(-8px) scale(1.15);
+  filter: drop-shadow(0 12px 20px rgba(255, 56, 92, 0.5));
+  z-index: 1000 !important;
+}
+
+.luxury-marker-svg svg {
+  overflow: visible;
+}
+
+/* Legacy PNG marker styles - keep for fallback */
+.luxury-marker {
+  filter: drop-shadow(0 6px 8px rgba(255, 56, 92, 0.3));
+  transition: filter 0.3s ease;
+}
+
+.luxury-marker:hover {
+  filter: drop-shadow(0 8px 12px rgba(255, 56, 92, 0.5));
+}
+
+/* Modern Discover Button with animations - FIXED: No horizontal movement */
+.map-discover-button {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(255, 56, 92, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.map-discover-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #fff 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.map-discover-button:hover {
+  background: linear-gradient(135deg, #e61e4d 0%, #c2123e 100%);
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 10px 35px rgba(255, 56, 92, 0.5);
+}
+
+.map-discover-button:hover::before {
+  opacity: 0.15;
+}
+
+.map-discover-button:active {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+/* Avoid crowding on small screens: lift the button a bit */
+@media (max-width: 640px) {
+  .map-discover-button {
+    bottom: 80px; /* leave room for other floating controls */
+  }
+}
+
+.map-discover-button svg {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-discover-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.discover-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Discovering Overlay */
+.discovering-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  padding: 24px 32px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  color: #ff385c;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.discovering-overlay::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ff385c;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Booking Success Notification */
+.booking-success-notification {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.success-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.success-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.success-message {
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+/* Enhanced Marker Styles */
+.luxury-marker {
+  filter: drop-shadow(0 4px 8px rgba(255, 56, 92, 0.4));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-marker:hover {
+  filter: drop-shadow(0 6px 12px rgba(255, 56, 92, 0.6));
+  transform: translateY(-4px) scale(1.1);
+}
+
+/* Leaflet Zoom Control Enhancement - Modern Style */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+  background: white !important;
+  color: #374151 !important;
+  border: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%) !important;
+  color: white !important;
+}
+
+.leaflet-control-zoom a:first-child {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Map Container Enhancement */
+#map {
+  background: #f8f9fa;
+}
+
+/* Leaflet Attribution Styling */
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px);
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  margin: 8px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #ff385c !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+}
+
+.leaflet-control-attribution a:hover {
+  color: #e61e4d !important;
+  text-decoration: underline !important;
+}
