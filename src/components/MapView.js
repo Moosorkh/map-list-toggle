@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import GeocodingService from '../services/GeocodingService';
+import PlacesService from '../services/PlacesService';
 import BookingModal from './BookingModal';
 
 const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) => {
@@ -38,7 +39,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
       });
 
       // Use modern, clean map tiles (MapTiler or Stamen Toner Lite)
-      // This gives a beautiful, minimalist look perfect for luxury properties
+      // This gives a beautiful, minimalist look perfect for hospitality properties
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
@@ -54,7 +55,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
       // Add a subtle attribution
       L.control.attribution({
         position: 'bottomleft',
-        prefix: 'Luxury Places Explorer'
+        prefix: 'Hospitality Places Explorer'
       }).addTo(mapRef.current);
 
       // Handle viewport changes
@@ -94,9 +95,9 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
         // Only update discovery button if no popups are open (to avoid triggering re-renders)
         if (!hasOpenPopups) {
-          // Check discovery button state
+          // Check discovery button state (based on zoom only)
           const zoom = map.getZoom();
-          if (zoom >= 8 && isOnLand(center.lat, center.lng)) {
+          if (zoom >= 6) {
             setShowDiscoverButton(true);
           } else {
             setShowDiscoverButton(false);
@@ -171,23 +172,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     };
   }, []);
 
-  // Simple check if point is on land
-  const isOnLand = (lat, lng) => {
-    // Simple check for the Pacific Ocean west of California
-    const OCEAN_LONGITUDE = -124.0;
-
-    // Check if we're significantly in the ocean (west of coastal line)
-    if (lng < OCEAN_LONGITUDE) {
-      return false;
-    }
-
-    // California bounding box (rough)
-    if (lat < 32.5 || lat > 42.0 || lng < -124.6 || lng > -114.0) {
-      return false;
-    }
-
-    return true;
-  };
+  // No longer restricting to a specific region; backend controls valid areas
 
   // Create a custom popup with image
   const createCustomPopup = (place) => {
@@ -227,11 +212,11 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         currentCenterRef.current[1]
       );
 
-      // Discover places in this area - limit to 5
-      const discoveredPlaces = await GeocodingService.discoverPlacesInArea(
-        currentBoundsRef.current,
-        true
-      );
+      // Discover places in this area from backend
+      const discoveredPlaces = await PlacesService.searchPlacesInArea({
+        bounds: currentBoundsRef.current,
+        searchTerm: ''
+      });
 
       if (discoveredPlaces && discoveredPlaces.length > 0) {
         // Send discovered places to parent
@@ -242,8 +227,11 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         setTimeout(() => {
           if (mapRef.current) {
             const center = mapRef.current.getCenter();
-            if (center && isOnLand(center.lat, center.lng)) {
-              setShowDiscoverButton(true);
+            if (center) {
+              const zoom = mapRef.current.getZoom();
+              if (zoom >= 6) {
+                setShowDiscoverButton(true);
+              }
             }
           }
         }, 5000);
@@ -482,14 +470,14 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
             <line x1="12" y1="8" x2="12" y2="16"></line>
             <line x1="8" y1="12" x2="16" y2="12"></line>
           </svg>
-          <span>Discover Luxury Places</span>
+          <span>Discover Hospitality Places</span>
         </button>
       )}
 
       {/* Discovery overlay */}
       {isDiscovering && (
         <div className="discovering-overlay">
-          <span>Discovering luxury places in this area...</span>
+          <span>Discovering hospitality places in this area...</span>
         </div>
       )}
 
@@ -512,7 +500,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
           <div className="success-icon">✓</div>
           <div>
             <div className="success-title">Booking Confirmed!</div>
-            <div className="success-message">Your luxury stay has been reserved</div>
+            <div className="success-message">Your stay has been reserved</div>
           </div>
         </div>
       )}
