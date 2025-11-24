@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BookingsService from '../services/BookingsService';
 import './BookingsView.css';
 
 const BookingsView = ({ onClose }) => {
@@ -9,7 +10,7 @@ const BookingsView = ({ onClose }) => {
     }, []);
 
     const loadBookings = () => {
-        const savedBookings = JSON.parse(localStorage.getItem('luxuryBookings') || '[]');
+        const savedBookings = BookingsService.getBookings();
         // Sort by booking date, most recent first
         const sorted = savedBookings.sort((a, b) =>
             new Date(b.bookingDate) - new Date(a.bookingDate)
@@ -20,16 +21,15 @@ const BookingsView = ({ onClose }) => {
     const cancelBooking = (bookingId) => {
         const confirmed = window.confirm('Are you sure you want to cancel this booking?');
         if (confirmed) {
-            const updatedBookings = bookings.filter(b => b.id !== bookingId);
-            localStorage.setItem('luxuryBookings', JSON.stringify(updatedBookings));
-            setBookings(updatedBookings);
+            const updatedBookings = BookingsService.removeBooking(bookingId);
+            setBookings(updatedBookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate)));
         }
     };
 
     const clearAllBookings = () => {
         const confirmed = window.confirm('Are you sure you want to clear all bookings?');
         if (confirmed) {
-            localStorage.removeItem('luxuryBookings');
+            BookingsService.clearAllBookings();
             setBookings([]);
         }
     };
@@ -49,7 +49,7 @@ const BookingsView = ({ onClose }) => {
                         <div className="empty-bookings">
                             <div className="empty-icon">📅</div>
                             <h3>No bookings yet</h3>
-                            <p>Start exploring luxury properties and make your first booking!</p>
+                            <p>Start exploring properties and make your first booking!</p>
                         </div>
                     ) : (
                         <>

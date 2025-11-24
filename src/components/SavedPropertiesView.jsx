@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SavedPropertiesService from '../services/SavedPropertiesService';
 import './SavedPropertiesView.css';
 
 const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
@@ -9,24 +10,23 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
     }, []);
 
     const loadSavedProperties = () => {
-        const saved = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+        const saved = SavedPropertiesService.getSavedProperties();
         // Sort by saved date, most recent first
         const sorted = saved.sort((a, b) =>
-            new Date(b.savedDate) - new Date(a.savedDate)
+            new Date(b.savedDate || b.savedAt) - new Date(a.savedDate || a.savedAt)
         );
         setSavedProperties(sorted);
     };
 
     const removeSaved = (propertyId) => {
-        const updated = savedProperties.filter(p => p.id !== propertyId);
-        localStorage.setItem('savedProperties', JSON.stringify(updated));
-        setSavedProperties(updated);
+        SavedPropertiesService.unsaveProperty(propertyId);
+        loadSavedProperties();
     };
 
     const clearAll = () => {
         const confirmed = window.confirm('Are you sure you want to remove all saved properties?');
         if (confirmed) {
-            localStorage.removeItem('savedProperties');
+            SavedPropertiesService.clearAllSavedProperties();
             setSavedProperties([]);
         }
     };
@@ -53,7 +53,7 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                         <div className="empty-saved">
                             <div className="empty-icon">🤍</div>
                             <h3>No saved properties yet</h3>
-                            <p>Start saving your favorite luxury properties by clicking the heart icon!</p>
+                            <p>Start saving your favorite properties by clicking the heart icon!</p>
                         </div>
                     ) : (
                         <>

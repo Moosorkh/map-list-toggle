@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import BookingModal from './BookingModal';
+import SavedPropertiesService from '../services/SavedPropertiesService';
 
 const PlaceDetails = ({ place, onClose }) => {
   const [isSaved, setIsSaved] = useState(false);
@@ -12,27 +13,14 @@ const PlaceDetails = ({ place, onClose }) => {
 
   // Check if property is saved
   useEffect(() => {
-    const savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
-    setIsSaved(savedProperties.some(p => p.id === place.id));
+    setIsSaved(SavedPropertiesService.isPropertySaved(place.id));
   }, [place.id]);
 
   // Handle save/unsave
   const handleSaveToggle = () => {
-    const savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
-
-    if (isSaved) {
-      // Remove from saved
-      const updated = savedProperties.filter(p => p.id !== place.id);
-      localStorage.setItem('savedProperties', JSON.stringify(updated));
-      setIsSaved(false);
-    } else {
-      // Add to saved
-      savedProperties.push({
-        ...place,
-        savedDate: new Date().toISOString()
-      });
-      localStorage.setItem('savedProperties', JSON.stringify(savedProperties));
-      setIsSaved(true);
+    const nowSaved = SavedPropertiesService.toggleSaveProperty(place);
+    setIsSaved(nowSaved);
+    if (nowSaved) {
       setShowSaveNotification(true);
       setTimeout(() => setShowSaveNotification(false), 3000);
     }
@@ -119,7 +107,7 @@ const PlaceDetails = ({ place, onClose }) => {
                   <span className="feature-icon">🏠</span>
                   <div className="feature-content">
                     <span className="feature-label">Property Type</span>
-                    <span className="feature-value">{place.propertyType || 'Luxury Estate'}</span>
+                    <span className="feature-value">{place.propertyType || 'Hotel'}</span>
                   </div>
                 </div>
 
@@ -186,7 +174,7 @@ const PlaceDetails = ({ place, onClose }) => {
           <div className="success-icon">✓</div>
           <div>
             <div className="success-title">Booking Confirmed!</div>
-            <div className="success-message">Your luxury stay has been reserved</div>
+            <div className="success-message">Your stay has been reserved</div>
           </div>
         </div>
       )}

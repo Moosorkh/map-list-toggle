@@ -135,7 +135,7 @@ const ListView = ({ places, onSelectPlace }) => {
             <div className="loading-dot"></div>
             <div className="loading-dot"></div>
           </div>
-          <div>Scroll to load more luxury properties...</div>
+          <div>Scroll to load more properties...</div>
         </div>
       )}
 
@@ -143,7 +143,7 @@ const ListView = ({ places, onSelectPlace }) => {
       {visiblePlacesToRender.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-icon">🏠</div>
-          <p>No luxury properties match your current search criteria.</p>
+          <p>No properties match your current search criteria.</p>
           <p style={{ fontSize: '14px', color: '#999' }}>Try adjusting your search or explore a different area.</p>
         </div>
       )}
@@ -300,7 +300,7 @@ const ListView = ({ places, onSelectPlace }) => {
           }}>✓</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '2px' }}>Booking Confirmed!</div>
-            <div style={{ fontSize: '13px', opacity: 0.95 }}>Your luxury stay has been reserved</div>
+            <div style={{ fontSize: '13px', opacity: 0.95 }}>Your stay has been reserved</div>
           </div>
         </div>
       )}

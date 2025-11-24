@@ -3,7 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import GeocodingService from '../services/GeocodingService';
-import PlacesService from '../services/PlacesService';
+import { searchPlacesInArea } from '../services/PlacesService';
 import BookingModal from './BookingModal';
 
 const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) => {
@@ -38,8 +38,8 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         markerZoomAnimation: true
       });
 
-      // Use modern, clean map tiles (MapTiler or Stamen Toner Lite)
-      // This gives a beautiful, minimalist look perfect for hospitality properties
+      // Use modern, clean map tiles
+      // This gives a beautiful, minimalist look for hospitality properties
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
@@ -55,7 +55,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
       // Add a subtle attribution
       L.control.attribution({
         position: 'bottomleft',
-        prefix: 'Hospitality Places Explorer'
+        prefix: 'Hospitality Finder'
       }).addTo(mapRef.current);
 
       // Handle viewport changes
@@ -95,9 +95,9 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
         // Only update discovery button if no popups are open (to avoid triggering re-renders)
         if (!hasOpenPopups) {
-          // Check discovery button state (based on zoom only)
+          // Check discovery button state
           const zoom = map.getZoom();
-          if (zoom >= 6) {
+          if (zoom >= 8) {
             setShowDiscoverButton(true);
           } else {
             setShowDiscoverButton(false);
@@ -172,8 +172,6 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     };
   }, []);
 
-  // No longer restricting to a specific region; backend controls valid areas
-
   // Create a custom popup with image
   const createCustomPopup = (place) => {
     const formattedPrice = place.price.toLocaleString();
@@ -212,8 +210,8 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         currentCenterRef.current[1]
       );
 
-      // Discover places in this area from backend
-      const discoveredPlaces = await PlacesService.searchPlacesInArea({
+      // Discover places in this area using real API
+      const discoveredPlaces = await searchPlacesInArea({
         bounds: currentBoundsRef.current,
         searchTerm: ''
       });
@@ -226,12 +224,9 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         setShowDiscoverButton(false);
         setTimeout(() => {
           if (mapRef.current) {
-            const center = mapRef.current.getCenter();
-            if (center) {
-              const zoom = mapRef.current.getZoom();
-              if (zoom >= 6) {
-                setShowDiscoverButton(true);
-              }
+            const zoom = mapRef.current.getZoom();
+            if (zoom >= 8) {
+              setShowDiscoverButton(true);
             }
           }
         }, 5000);
@@ -470,14 +465,14 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
             <line x1="12" y1="8" x2="12" y2="16"></line>
             <line x1="8" y1="12" x2="16" y2="12"></line>
           </svg>
-          <span>Discover Hospitality Places</span>
+          <span>Discover Places</span>
         </button>
       )}
 
       {/* Discovery overlay */}
       {isDiscovering && (
         <div className="discovering-overlay">
-          <span>Discovering hospitality places in this area...</span>
+          <span>Discovering places in this area...</span>
         </div>
       )}
 

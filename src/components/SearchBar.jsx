@@ -48,7 +48,7 @@ const SearchBar = ({ value, onChange }) => {
       </svg>
       <input
         type="text"
-        placeholder="Search luxury properties..."
+        placeholder="Search properties..."
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onFocus={() => setIsFocused(true)}

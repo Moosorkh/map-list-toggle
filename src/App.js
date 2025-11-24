@@ -7,6 +7,8 @@ import SavedPropertiesView from './components/SavedPropertiesView';
 import { useAppState } from './hooks/useAppState';
 import { getDisplayedPlaces } from './utils/placeUtils';
 import locationManager from './services/LocationManager';
+import BookingsService from './services/BookingsService';
+import SavedPropertiesService from './services/SavedPropertiesService';
 import { DEFAULT_MAP_CENTER } from './config/constants';
 import './App.css';
 
@@ -24,13 +26,11 @@ function App() {
   // Check bookings count on mount
   useEffect(() => {
     const updateBookingsCount = () => {
-      const bookings = JSON.parse(localStorage.getItem('luxuryBookings') || '[]');
-      setBookingsCount(bookings.length);
+      setBookingsCount(BookingsService.getBookingsCount());
     };
 
     const updateSavedCount = () => {
-      const saved = JSON.parse(localStorage.getItem('savedProperties') || '[]');
-      setSavedCount(saved.length);
+      setSavedCount(SavedPropertiesService.getSavedPropertiesCount());
     };
 
     updateBookingsCount();
@@ -290,9 +290,9 @@ function App() {
   }
 
   return (
-    <div className="app" role="application" aria-label="Luxury Property Finder">
+    <div className="app" role="application" aria-label="Hospitality Finder">
       <header className="app-header" role="banner">
-        <h1 className="visually-hidden">Luxury Property Finder</h1>
+        <h1 className="visually-hidden">Hospitality Finder</h1>
         <div className="header-left">
           <SearchBar
             value={state.searchTerm}
@@ -386,9 +386,9 @@ function App() {
         <div className="empty-state-overlay">
           <div className="empty-state">
             <div className="empty-state-icon">🏠</div>
-            <p>No luxury properties found</p>
+            <p>No properties found</p>
             <p style={{ fontSize: '14px', color: '#999', marginBottom: '20px' }}>
-              Try exploring the map to discover luxury properties in different areas.
+              Try exploring the map to discover properties in different areas.
             </p>
             <button className="action-button primary" onClick={toggleView}>
               Switch to Map View
@@ -412,8 +412,7 @@ function App() {
         <BookingsView onClose={() => {
           setShowBookings(false);
           // Update count after closing
-          const bookings = JSON.parse(localStorage.getItem('luxuryBookings') || '[]');
-          setBookingsCount(bookings.length);
+          setBookingsCount(BookingsService.getBookingsCount());
         }} />
       )}
 
@@ -423,8 +422,7 @@ function App() {
           onClose={() => {
             setShowSaved(false);
             // Update count after closing
-            const saved = JSON.parse(localStorage.getItem('savedProperties') || '[]');
-            setSavedCount(saved.length);
+            setSavedCount(SavedPropertiesService.getSavedPropertiesCount());
           }}
           onSelectProperty={(property) => {
             setSelectedPlace(property);

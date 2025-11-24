@@ -6,8 +6,8 @@
 export const DEFAULT_MAP_CENTER = [34.0522, -118.2437];
 export const DEFAULT_MAP_ZOOM = 10;
 
-// Luxury property images from Unsplash
-export const LUXURY_IMAGES = [
+// Property images from Unsplash
+export const PROPERTY_IMAGES = [
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
@@ -32,7 +32,7 @@ export const LUXURY_IMAGES = [
 
 // Get a random image URL
 export const getRandomImage = () => {
-    return LUXURY_IMAGES[Math.floor(Math.random() * LUXURY_IMAGES.length)];
+    return PROPERTY_IMAGES[Math.floor(Math.random() * PROPERTY_IMAGES.length)];
 };
 
 // Coastal cities in California
@@ -59,7 +59,7 @@ export const COASTAL_CITIES = [
     { name: "Redondo Beach", lat: 33.8492, lng: -118.3886 }
 ];
 
-// Inland luxury destinations
+// Inland destinations
 export const INLAND_CITIES = [
     { name: "Palm Springs", lat: 33.8303, lng: -116.5453 },
     { name: "Napa", lat: 38.2975, lng: -122.2869 },

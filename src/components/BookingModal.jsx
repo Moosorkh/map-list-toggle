@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BookingsService from '../services/BookingsService';
 import './BookingModal.css';
 
 const BookingModal = ({ place, onClose, onConfirm }) => {
@@ -63,10 +64,8 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
             bookingDate: new Date().toISOString()
         };
 
-        // Save to localStorage
-        const existingBookings = JSON.parse(localStorage.getItem('luxuryBookings') || '[]');
-        existingBookings.push(booking);
-        localStorage.setItem('luxuryBookings', JSON.stringify(existingBookings));
+        // Save to localStorage using service
+        BookingsService.addBooking(booking);
 
         onConfirm(booking);
     };
