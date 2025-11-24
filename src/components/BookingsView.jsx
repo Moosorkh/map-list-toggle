@@ -1,35 +1,45 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import BookingsService from '../services/BookingsService';
 import './BookingsView.css';
 
 const BookingsView = ({ onClose }) => {
+    const { token } = useAuth();
     const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadBookings();
-    }, []);
+    }, [token]);
 
-    const loadBookings = () => {
-        const savedBookings = BookingsService.getBookings();
-        // Sort by booking date, most recent first
-        const sorted = savedBookings.sort((a, b) =>
-            new Date(b.bookingDate) - new Date(a.bookingDate)
-        );
-        setBookings(sorted);
-    };
-
-    const cancelBooking = (bookingId) => {
-        const confirmed = window.confirm('Are you sure you want to cancel this booking?');
-        if (confirmed) {
-            const updatedBookings = BookingsService.removeBooking(bookingId);
-            setBookings(updatedBookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate)));
+    const loadBookings = async () => {
+        setLoading(true);
+        try {
+            const savedBookings = await BookingsService.getBookings(token);
+            // Sort by creation date, most recent first
+            const sorted = savedBookings.sort((a, b) =>
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setBookings(sorted);
+        } catch (error) {
+            console.error('Failed to load bookings:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const clearAllBookings = () => {
+    const cancelBooking = async (bookingId) => {
+        const confirmed = window.confirm('Are you sure you want to cancel this booking?');
+        if (confirmed) {
+            await BookingsService.removeBooking(bookingId, token);
+            await loadBookings();
+        }
+    };
+
+    const clearAllBookings = async () => {
         const confirmed = window.confirm('Are you sure you want to clear all bookings?');
         if (confirmed) {
-            BookingsService.clearAllBookings();
+            await BookingsService.clearAllBookings(token);
             setBookings([]);
         }
     };
@@ -45,7 +55,9 @@ const BookingsView = ({ onClose }) => {
                 </div>
 
                 <div className="bookings-content">
-                    {bookings.length === 0 ? (
+                    {loading ? (
+                        <div className="bookings-loading">Loading bookings...</div>
+                    ) : bookings.length === 0 ? (
                         <div className="empty-bookings">
                             <div className="empty-icon">📅</div>
                             <h3>No bookings yet</h3>
@@ -63,9 +75,9 @@ const BookingsView = ({ onClose }) => {
                             <div className="bookings-list">
                                 {bookings.map(booking => (
                                     <div key={booking.id} className="booking-item">
-                                        <img src={booking.placeImage} alt={booking.placeName} className="booking-image" />
+                                        <img src={booking.place?.imageUrl} alt={booking.place?.name} className="booking-image" />
                                         <div className="booking-details">
-                                            <h3>{booking.placeName}</h3>
+                                            <h3>{booking.place?.name || 'Property'}</h3>
                                             <div className="booking-info">
                                                 <div className="info-row">
                                                     <span className="info-label">Check-in:</span>
@@ -85,7 +97,7 @@ const BookingsView = ({ onClose }) => {
                                                 </div>
                                                 <div className="info-row total">
                                                     <span className="info-label">Total:</span>
-                                                    <span className="info-value">${booking.total.toLocaleString()}</span>
+                                                    <span className="info-value">${booking.total?.toLocaleString() || 0}</span>
                                                 </div>
                                             </div>
                                             <div className="booking-meta">

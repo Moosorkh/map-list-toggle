@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import BookingModal from './BookingModal';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 
 const PlaceDetails = ({ place, onClose }) => {
+  const { token } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showSaveNotification, setShowSaveNotification] = useState(false);
@@ -13,12 +15,16 @@ const PlaceDetails = ({ place, onClose }) => {
 
   // Check if property is saved
   useEffect(() => {
-    setIsSaved(SavedPropertiesService.isPropertySaved(place.id));
-  }, [place.id]);
+    const checkSaved = async () => {
+      const saved = await SavedPropertiesService.isPropertySaved(place.id, token);
+      setIsSaved(saved);
+    };
+    checkSaved();
+  }, [place.id, token]);
 
   // Handle save/unsave
-  const handleSaveToggle = () => {
-    const nowSaved = SavedPropertiesService.toggleSaveProperty(place);
+  const handleSaveToggle = async () => {
+    const nowSaved = await SavedPropertiesService.toggleSaveProperty(place, token);
     setIsSaved(nowSaved);
     if (nowSaved) {
       setShowSaveNotification(true);

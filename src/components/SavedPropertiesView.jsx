@@ -1,32 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import './SavedPropertiesView.css';
 
 const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
+    const { token } = useAuth();
     const [savedProperties, setSavedProperties] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadSavedProperties();
-    }, []);
+    }, [token]);
 
-    const loadSavedProperties = () => {
-        const saved = SavedPropertiesService.getSavedProperties();
-        // Sort by saved date, most recent first
-        const sorted = saved.sort((a, b) =>
-            new Date(b.savedDate || b.savedAt) - new Date(a.savedDate || a.savedAt)
-        );
-        setSavedProperties(sorted);
+    const loadSavedProperties = async () => {
+        setLoading(true);
+        try {
+            const saved = await SavedPropertiesService.getSavedProperties(token);
+            // Sort by saved date, most recent first
+            const sorted = saved.sort((a, b) =>
+                new Date(b.savedAt || 0) - new Date(a.savedAt || 0)
+            );
+            setSavedProperties(sorted);
+        } catch (error) {
+            console.error('Failed to load saved properties:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const removeSaved = (propertyId) => {
-        SavedPropertiesService.unsaveProperty(propertyId);
-        loadSavedProperties();
+    const removeSaved = async (propertyId) => {
+        await SavedPropertiesService.unsaveProperty(propertyId, token);
+        await loadSavedProperties();
     };
 
-    const clearAll = () => {
+    const clearAll = async () => {
         const confirmed = window.confirm('Are you sure you want to remove all saved properties?');
         if (confirmed) {
-            SavedPropertiesService.clearAllSavedProperties();
+            await SavedPropertiesService.clearAllSavedProperties(token);
             setSavedProperties([]);
         }
     };
@@ -49,7 +59,9 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                 </div>
 
                 <div className="saved-content">
-                    {savedProperties.length === 0 ? (
+                    {loading ? (
+                        <div className="saved-loading">Loading saved properties...</div>
+                    ) : savedProperties.length === 0 ? (
                         <div className="empty-saved">
                             <div className="empty-icon">🤍</div>
                             <h3>No saved properties yet</h3>

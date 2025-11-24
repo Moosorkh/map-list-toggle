@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import BookingsService from '../services/BookingsService';
 import './BookingModal.css';
 
 const BookingModal = ({ place, onClose, onConfirm }) => {
+    const { token } = useAuth();
     const [bookingData, setBookingData] = useState({
         checkIn: '',
         checkOut: '',
@@ -44,7 +46,7 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
         }
     };
 
-    const handleConfirmBooking = () => {
+    const handleConfirmBooking = async () => {
         // Calculate nights and total
         const checkIn = new Date(bookingData.checkIn);
         const checkOut = new Date(bookingData.checkOut);
@@ -52,20 +54,20 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
         const total = nights * place.price;
 
         const booking = {
-            id: `booking_${Date.now()}`,
-            placeId: place.id,
-            placeName: place.name,
-            placeImage: place.imageUrl,
+            place: {
+                id: place.id,
+                name: place.name,
+                imageUrl: place.imageUrl,
+                price: place.price,
+            },
             ...bookingData,
             nights,
-            pricePerNight: place.price,
             total,
             status: 'confirmed',
-            bookingDate: new Date().toISOString()
         };
 
-        // Save to localStorage using service
-        BookingsService.addBooking(booking);
+        // Save booking (syncs to backend if authenticated)
+        await BookingsService.addBooking(booking, token);
 
         onConfirm(booking);
     };

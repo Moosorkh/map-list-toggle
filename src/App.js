@@ -1,4 +1,5 @@
 import React, { useEffect, Suspense, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SearchBar from './components/SearchBar';
 import LocationSelector from './components/LocationSelector';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -9,6 +10,8 @@ import { getDisplayedPlaces } from './utils/placeUtils';
 import locationManager from './services/LocationManager';
 import BookingsService from './services/BookingsService';
 import SavedPropertiesService from './services/SavedPropertiesService';
+import { searchPlacesInArea } from './services/PlacesService';
+import { useAuth } from './context/AuthContext';
 import { DEFAULT_MAP_CENTER } from './config/constants';
 import './App.css';
 
@@ -18,6 +21,8 @@ const ListView = React.lazy(() => import('./components/ListView'));
 const PlaceDetails = React.lazy(() => import('./components/PlaceDetails'));
 
 function App() {
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [showBookings, setShowBookings] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [bookingsCount, setBookingsCount] = useState(0);
@@ -25,33 +30,26 @@ function App() {
 
   // Check bookings count on mount
   useEffect(() => {
-    const updateBookingsCount = () => {
-      setBookingsCount(BookingsService.getBookingsCount());
+    const updateCounts = async () => {
+      const bCount = await BookingsService.getBookingsCount(token);
+      const sCount = await SavedPropertiesService.getSavedPropertiesCount(token);
+      setBookingsCount(bCount);
+      setSavedCount(sCount);
     };
 
-    const updateSavedCount = () => {
-      setSavedCount(SavedPropertiesService.getSavedPropertiesCount());
-    };
-
-    updateBookingsCount();
-    updateSavedCount();
+    updateCounts();
 
     // Listen for storage changes
-    window.addEventListener('storage', updateBookingsCount);
-    window.addEventListener('storage', updateSavedCount);
+    window.addEventListener('storage', updateCounts);
 
     // Also check periodically in case changes happen in same tab
-    const interval = setInterval(() => {
-      updateBookingsCount();
-      updateSavedCount();
-    }, 1000);
+    const interval = setInterval(updateCounts, 1000);
 
     return () => {
-      window.removeEventListener('storage', updateBookingsCount);
-      window.removeEventListener('storage', updateSavedCount);
+      window.removeEventListener('storage', updateCounts);
       clearInterval(interval);
     };
-  }, []);
+  }, [token]);
 
   // Use the custom hook for app state management
   const {
@@ -73,6 +71,8 @@ function App() {
   // Initialize the app
   useEffect(() => {
     const initializeApp = async () => {
+      setIsLoading(true);
+      
       // Clean up any existing empty locations
       locationManager.cleanupEmptyLocations();
 
@@ -87,17 +87,44 @@ function App() {
         setDisplayedPlaces(firstLocation.places);
         setCurrentLocation(firstLocation.name);
       } else {
-        // Create a default location with no places
-        const initialLocationId = locationManager.addLocation(
-          'California',
-          DEFAULT_MAP_CENTER,
-          []
-        );
+        // Try to fetch initial places from backend
+        try {
+          const defaultBounds = {
+            north: DEFAULT_MAP_CENTER[0] + 1,
+            south: DEFAULT_MAP_CENTER[0] - 1,
+            east: DEFAULT_MAP_CENTER[1] + 1,
+            west: DEFAULT_MAP_CENTER[1] - 1,
+          };
+          
+          const initialPlaces = await searchPlacesInArea({
+            bounds: defaultBounds,
+            searchTerm: '',
+          });
 
-        setCurrentLocationId(initialLocationId);
-        setAllPlaces([]);
-        setDisplayedPlaces([]);
-        setCurrentLocation('California');
+          const initialLocationId = locationManager.addLocation(
+            'Default Location',
+            DEFAULT_MAP_CENTER,
+            initialPlaces
+          );
+
+          setCurrentLocationId(initialLocationId);
+          setAllPlaces(initialPlaces);
+          setDisplayedPlaces(initialPlaces);
+          setCurrentLocation('Default Location');
+        } catch (error) {
+          console.error('Failed to fetch initial places:', error);
+          // Create empty default location as fallback
+          const initialLocationId = locationManager.addLocation(
+            'Default Location',
+            DEFAULT_MAP_CENTER,
+            []
+          );
+
+          setCurrentLocationId(initialLocationId);
+          setAllPlaces([]);
+          setDisplayedPlaces([]);
+          setCurrentLocation('Default Location');
+        }
       }
 
       // Update locations list
@@ -309,6 +336,24 @@ function App() {
         </div>
 
         <div className="header-right">
+          {user && (
+            <button
+              className="header-profile-button"
+              onClick={() => navigate('/dashboard')}
+              aria-label="Go to dashboard"
+            >
+              👤 {user.name || 'Dashboard'}
+            </button>
+          )}
+          {!user && (
+            <button
+              className="header-login-button"
+              onClick={() => navigate('/login')}
+              aria-label="Login"
+            >
+              🔐 Login
+            </button>
+          )}
           <button
             className="header-saved-button"
             onClick={() => setShowSaved(true)}
