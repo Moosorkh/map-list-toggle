@@ -11,7 +11,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   const markersRef = useRef({});
   const [mapReady, setMapReady] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [showDiscoverButton, setShowDiscoverButton] = useState(false);
+  const [showDiscoverButton, setShowDiscoverButton] = useState(true); // Show by default
   const [bookingPlace, setBookingPlace] = useState(null);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   const currentBoundsRef = useRef(null);
@@ -22,15 +22,15 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   // Initialize map - only runs once
   useEffect(() => {
     if (!mapRef.current) {
-      // Center on first place by default, or average of all places
+      // Use first place if available, otherwise will use geolocation
       const defaultCenter = places.length > 0
         ? [places[0].latitude, places[0].longitude]
-        : [34.0522, -118.2437]; // Los Angeles as default center
+        : [20, 0]; // Temporary center, will be updated by geolocation
 
       // Create map with modern clean style
       mapRef.current = L.map('map', {
         center: defaultCenter,
-        zoom: 10,
+        zoom: 12,
         zoomControl: false,
         attributionControl: false,
         zoomAnimation: true,
@@ -159,8 +159,42 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
       initializedRef.current = true;
       setMapReady(true);
 
-      // Initial viewport report after markers are updated
-      setTimeout(handleMapMove, 100);
+      // Try to get user's actual location using browser geolocation
+      if (places.length === 0 && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            mapRef.current.setView([latitude, longitude], 12, { animate: true });
+            
+            // Trigger discover after centering on user location
+            setTimeout(() => {
+              if (currentBoundsRef.current) {
+                handleDiscover();
+              }
+            }, 500);
+          },
+          (error) => {
+            console.log('Geolocation not available, using default view');
+            // Fallback: auto-discover wherever the map is
+            setTimeout(() => {
+              if (currentBoundsRef.current) {
+                handleDiscover();
+              }
+            }, 1000);
+          },
+          { timeout: 5000 }
+        );
+      } else {
+        // Initial viewport report after markers are updated
+        setTimeout(handleMapMove, 100);
+        
+        // Auto-discover places on initial load
+        setTimeout(() => {
+          if (places.length === 0 && currentBoundsRef.current) {
+            handleDiscover();
+          }
+        }, 1000);
+      }
     }
 
     return () => {

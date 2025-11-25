@@ -15,7 +15,7 @@ const STORAGE_KEY = 'hospitalityBookings';
 export const getBookings = async (token = null) => {
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/bookings`, {
+      const response = await fetch(`${API_BASE}/me/bookings`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -27,7 +27,8 @@ export const getBookings = async (token = null) => {
         throw new Error(`Bookings API error: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('BookingsService: Failed to fetch from backend:', error);
       return getLocalBookings();
@@ -67,7 +68,7 @@ export const addBooking = async (booking, token = null) => {
 
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/bookings`, {
+      const response = await fetch(`${API_BASE}/me/bookings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -82,9 +83,10 @@ export const addBooking = async (booking, token = null) => {
       }
 
       const savedBooking = await response.json();
+      const bookingWithId = savedBooking.id ? savedBooking : { ...savedBooking, ...bookingData };
       
       // Also save to localStorage as cache
-      saveLocalBooking(savedBooking);
+      saveLocalBooking(bookingWithId);
       
       return savedBooking;
     } catch (error) {
@@ -124,7 +126,7 @@ const saveLocalBooking = (booking) => {
 export const removeBooking = async (bookingId, token = null) => {
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/bookings/${bookingId}`, {
+      const response = await fetch(`${API_BASE}/me/bookings/${bookingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

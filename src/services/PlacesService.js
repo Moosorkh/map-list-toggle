@@ -40,20 +40,13 @@ export const searchPlacesInArea = async ({ bounds, searchTerm = '' }) => {
       return [];
     }
 
-    // Ensure each place has required fields
+    // Backend returns places with correct structure already
     return data.map(place => ({
-      id: place.id || `place_${Date.now()}_${Math.random()}`,
-      name: place.name || 'Unnamed Property',
-      latitude: place.latitude || 0,
-      longitude: place.longitude || 0,
-      description: place.description || '',
-      price: place.price || 0,
-      imageUrl: place.imageUrl || '',
-      rating: place.rating || 0,
-      reviewCount: place.reviewCount || 0,
-      propertyType: place.propertyType || 'Property',
-      amenities: place.amenities || [],
-      isDiscovered: place.isDiscovered !== undefined ? place.isDiscovered : true,
+      ...place,
+      // Add imageUrl alias if image_url exists
+      imageUrl: place.imageUrl || place.image_url || '',
+      // Ensure amenities is array
+      amenities: Array.isArray(place.amenities) ? place.amenities : [],
     }));
   } catch (error) {
     console.error('PlacesService: Failed to fetch places:', error);

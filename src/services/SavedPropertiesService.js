@@ -15,7 +15,7 @@ const STORAGE_KEY = 'savedProperties';
 export const getSavedProperties = async (token = null) => {
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/saved`, {
+      const response = await fetch(`${API_BASE}/me/saved`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -27,7 +27,8 @@ export const getSavedProperties = async (token = null) => {
         throw new Error(`Saved properties API error: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('SavedPropertiesService: Failed to fetch from backend:', error);
       return getLocalSavedProperties();
@@ -72,7 +73,7 @@ export const isPropertySaved = async (propertyId, token = null) => {
 export const saveProperty = async (property, token = null) => {
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/saved`, {
+      const response = await fetch(`${API_BASE}/me/saved`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -136,7 +137,7 @@ const saveLocalProperty = (property) => {
 export const unsaveProperty = async (propertyId, token = null) => {
   if (token) {
     try {
-      const response = await fetch(`${API_BASE}/saved/${propertyId}`, {
+      const response = await fetch(`${API_BASE}/me/saved/${propertyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

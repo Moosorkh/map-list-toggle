@@ -25,8 +25,8 @@ const DashboardPage = () => {
           getSavedProperties(token),
         ]);
 
-        setBookings(fetchedBookings);
-        setSavedProperties(fetchedSaved);
+        setBookings(Array.isArray(fetchedBookings) ? fetchedBookings : []);
+        setSavedProperties(Array.isArray(fetchedSaved) ? fetchedSaved : []);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {

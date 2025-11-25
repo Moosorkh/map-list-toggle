@@ -28,7 +28,7 @@ function App() {
   const [bookingsCount, setBookingsCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
 
-  // Check bookings count on mount
+  // Check bookings count on mount and when token changes
   useEffect(() => {
     const updateCounts = async () => {
       const bCount = await BookingsService.getBookingsCount(token);
@@ -39,15 +39,11 @@ function App() {
 
     updateCounts();
 
-    // Listen for storage changes
+    // Listen for storage changes (for cross-tab updates)
     window.addEventListener('storage', updateCounts);
-
-    // Also check periodically in case changes happen in same tab
-    const interval = setInterval(updateCounts, 1000);
 
     return () => {
       window.removeEventListener('storage', updateCounts);
-      clearInterval(interval);
     };
   }, [token]);
 
@@ -87,44 +83,17 @@ function App() {
         setDisplayedPlaces(firstLocation.places);
         setCurrentLocation(firstLocation.name);
       } else {
-        // Try to fetch initial places from backend
-        try {
-          const defaultBounds = {
-            north: DEFAULT_MAP_CENTER[0] + 1,
-            south: DEFAULT_MAP_CENTER[0] - 1,
-            east: DEFAULT_MAP_CENTER[1] + 1,
-            west: DEFAULT_MAP_CENTER[1] - 1,
-          };
-          
-          const initialPlaces = await searchPlacesInArea({
-            bounds: defaultBounds,
-            searchTerm: '',
-          });
+        // Create empty initial location - map will auto-discover based on user's location
+        const initialLocationId = locationManager.addLocation(
+          'Discovering...',
+          DEFAULT_MAP_CENTER,
+          []
+        );
 
-          const initialLocationId = locationManager.addLocation(
-            'Default Location',
-            DEFAULT_MAP_CENTER,
-            initialPlaces
-          );
-
-          setCurrentLocationId(initialLocationId);
-          setAllPlaces(initialPlaces);
-          setDisplayedPlaces(initialPlaces);
-          setCurrentLocation('Default Location');
-        } catch (error) {
-          console.error('Failed to fetch initial places:', error);
-          // Create empty default location as fallback
-          const initialLocationId = locationManager.addLocation(
-            'Default Location',
-            DEFAULT_MAP_CENTER,
-            []
-          );
-
-          setCurrentLocationId(initialLocationId);
-          setAllPlaces([]);
-          setDisplayedPlaces([]);
-          setCurrentLocation('Default Location');
-        }
+        setCurrentLocationId(initialLocationId);
+        setAllPlaces([]);
+        setDisplayedPlaces([]);
+        setCurrentLocation('Discovering...');
       }
 
       // Update locations list
