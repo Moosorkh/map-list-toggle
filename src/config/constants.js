@@ -2,8 +2,9 @@
  * Shared constants and configuration for the app
  */
 
-// Default map center (Los Angeles)
-export const DEFAULT_MAP_CENTER = [34.0522, -118.2437];
+// Default map center (Los Angeles - Santa Monica/Beverly Hills area where seeded places are)
+// Centered at Venice Beach/Santa Monica where most LA seeded places are located
+export const DEFAULT_MAP_CENTER = [34.0195, -118.4912];
 export const DEFAULT_MAP_ZOOM = 10;
 
 // Property images from Unsplash

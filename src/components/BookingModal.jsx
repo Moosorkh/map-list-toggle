@@ -51,14 +51,15 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
         const checkIn = new Date(bookingData.checkIn);
         const checkOut = new Date(bookingData.checkOut);
         const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-        const total = nights * place.price;
+        const pricePerNight = place.price || 0;
+        const total = nights * pricePerNight;
 
         const booking = {
             place: {
                 id: place.id,
                 name: place.name,
-                imageUrl: place.imageUrl,
-                price: place.price,
+                imageUrl: place.imageUrl || place.image_url,
+                price: pricePerNight,
             },
             ...bookingData,
             nights,
@@ -83,7 +84,8 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
 
     const calculateTotal = () => {
         const nights = calculateNights();
-        return nights * place.price;
+        const pricePerNight = place.price || 0;
+        return nights * pricePerNight;
     };
 
     return (

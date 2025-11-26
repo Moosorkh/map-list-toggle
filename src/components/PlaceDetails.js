@@ -10,8 +10,24 @@ const PlaceDetails = ({ place, onClose }) => {
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
 
-  // Format price with commas
-  const formattedPrice = place.price.toLocaleString();
+  // Convert price_range to estimated numeric price for display
+  const getEstimatedPrice = () => {
+    if (place.price && typeof place.price === 'number') {
+      return place.price;
+    }
+    // Convert price_range ($, $$, $$$, $$$$) to estimated price
+    const priceRangeMap = {
+      '$': 50,
+      '$$': 150,
+      '$$$': 300,
+      '$$$$': 600
+    };
+    return priceRangeMap[place.price_range] || 150;
+  };
+
+  const estimatedPrice = getEstimatedPrice();
+  const formattedPrice = estimatedPrice.toLocaleString();
+  const priceDisplay = place.price_range || `$${formattedPrice}`;
 
   // Check if property is saved
   useEffect(() => {
@@ -93,8 +109,8 @@ const PlaceDetails = ({ place, onClose }) => {
               <div className="details-header">
                 <h2>{place.name}</h2>
                 <div className="price-badge">
-                  <span className="price-amount">${formattedPrice}</span>
-                  <span className="price-label">per night</span>
+                  <span className="price-amount">{priceDisplay}</span>
+                  <span className="price-label">{place.price_range ? '' : 'per night'}</span>
                 </div>
               </div>
 
@@ -160,7 +176,7 @@ const PlaceDetails = ({ place, onClose }) => {
       {/* Booking Modal */}
       {showBooking && (
         <BookingModal
-          place={place}
+          place={{ ...place, price: estimatedPrice }}
           onClose={() => setShowBooking(false)}
           onConfirm={handleBookingConfirm}
         />

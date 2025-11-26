@@ -19,6 +19,9 @@ export const searchPlacesInArea = async ({ bounds, searchTerm = '' }) => {
       searchTerm,
     };
 
+    console.log('[PlacesService] Searching places with bounds:', bounds);
+    console.log('[PlacesService] API endpoint:', `${API_BASE}/places/search`);
+
     const response = await fetch(`${API_BASE}/places/search`, {
       method: 'POST',
       headers: {
@@ -33,6 +36,7 @@ export const searchPlacesInArea = async ({ bounds, searchTerm = '' }) => {
     }
 
     const data = await response.json();
+    console.log('[PlacesService] API returned:', data.length, 'places');
 
     // Validate response structure
     if (!Array.isArray(data)) {
@@ -41,13 +45,18 @@ export const searchPlacesInArea = async ({ bounds, searchTerm = '' }) => {
     }
 
     // Backend returns places with correct structure already
-    return data.map(place => ({
+    const mappedPlaces = data.map(place => ({
       ...place,
       // Add imageUrl alias if image_url exists
       imageUrl: place.imageUrl || place.image_url || '',
       // Ensure amenities is array
       amenities: Array.isArray(place.amenities) ? place.amenities : [],
+      // Mark as discovered
+      isDiscovered: true,
     }));
+
+    console.log('[PlacesService] Returning', mappedPlaces.length, 'mapped places');
+    return mappedPlaces;
   } catch (error) {
     console.error('PlacesService: Failed to fetch places:', error);
     

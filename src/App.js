@@ -145,8 +145,13 @@ function App() {
 
   // Handle discovery of new places
   const handleDiscoverPlaces = async (newPlaces, locationData) => {
+    console.log('[App] handleDiscoverPlaces called with', newPlaces?.length || 0, 'places');
+    
     // Guard against empty places or discovery in progress
-    if (!newPlaces || newPlaces.length === 0 || state.discoveryInProgress) return;
+    if (!newPlaces || newPlaces.length === 0 || state.discoveryInProgress) {
+      console.log('[App] Skipping discovery: empty places or already in progress');
+      return;
+    }
 
     setDiscoveryInProgress(true);
 
@@ -181,33 +186,29 @@ function App() {
         // Add places to existing location
         locationManager.addPlacesToLocation(existingLocation.id, uniqueNewPlaces);
 
-        // Update state
+        // Get the updated location from manager to ensure consistency
+        const updatedLocation = locationManager.getCurrentLocation();
+        
+        // Update all related state immediately to trigger re-render
         setLocations(locationManager.getAllLocations());
-        setAllPlaces([...existingLocation.places, ...uniqueNewPlaces]);
+        setAllPlaces(updatedLocation.places);
+        setDisplayedPlaces(updatedLocation.places);
         setDiscoveredPlaces(uniqueNewPlaces);
-
-        // If this is the current location, update displayed places
-        if (existingLocation.id === state.currentLocationId) {
-          if (!state.searchTerm) {
-            setDisplayedPlaces([...existingLocation.places, ...uniqueNewPlaces]);
-          } else {
-            // Apply search filter to combined places
-            const combined = [...existingLocation.places, ...uniqueNewPlaces];
-            const filtered = getDisplayedPlaces(combined, state.view, state.searchTerm, state.mapState.bounds);
-            setDisplayedPlaces(filtered);
-          }
-        }
+        setCurrentLocation(updatedLocation.name);
       } else {
         // New location - add it to the manager with limited places (max 5)
         const limitedPlaces = newPlaces.slice(0, 5);
         const center = state.mapState.center || DEFAULT_MAP_CENTER;
         const newLocationId = locationManager.addLocation(locationName, center, limitedPlaces);
 
-        // Update app state
+        // Get the newly created location from manager
+        const newLocation = locationManager.getCurrentLocation();
+
+        // Update all related state immediately
         setCurrentLocationId(newLocationId);
-        setCurrentLocation(locationName);
-        setAllPlaces(limitedPlaces);
-        setDisplayedPlaces(limitedPlaces);
+        setCurrentLocation(newLocation.name);
+        setAllPlaces(newLocation.places);
+        setDisplayedPlaces(newLocation.places);
         setDiscoveredPlaces(limitedPlaces);
         setLocations(locationManager.getAllLocations());
       }
@@ -354,7 +355,7 @@ function App() {
         <Suspense fallback={<LoadingSpinner message="Loading map view..." />}>
           {state.view === 'map' ? (
             <MapView
-              places={state.searchTerm ? state.displayedPlaces : state.allPlaces}
+              places={state.displayedPlaces}
               onViewportChange={handleViewportChange}
               onDiscoverPlaces={handleDiscoverPlaces}
               onSelectPlace={setSelectedPlace}

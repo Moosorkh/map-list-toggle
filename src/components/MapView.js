@@ -208,19 +208,27 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
   // Create a custom popup with image
   const createCustomPopup = (place) => {
-    const formattedPrice = place.price.toLocaleString();
+    // Handle both price (numeric) and price_range (string like "$$$")
+    let priceDisplay;
+    if (place.price && typeof place.price === 'number') {
+      priceDisplay = `$${place.price.toLocaleString()}/night`;
+    } else if (place.price_range) {
+      priceDisplay = `${place.price_range}`;
+    } else {
+      priceDisplay = 'Contact for pricing';
+    }
 
     return `
       <div class="custom-popup">
         <div class="popup-image-container">
-          <img src="${place.imageUrl}" alt="${place.name}" class="popup-image">
+          <img src="${place.imageUrl || place.image_url || ''}" alt="${place.name}" class="popup-image">
           ${place.isDiscovered ? '<div class="popup-new-tag">NEW</div>' : ''}
         </div>
         <div class="popup-content">
           <h3 class="popup-title">${place.name}</h3>
-          <p class="popup-description">${place.description}</p>
+          <p class="popup-description">${place.description || ''}</p>
           <div class="popup-footer">
-            <span class="popup-price">$${formattedPrice}/night</span>
+            <span class="popup-price">${priceDisplay}</span>
             <div class="popup-buttons">
               <button class="popup-details-button" data-place-id="${place.id}">Details</button>
               <button class="popup-book-button" data-place-id="${place.id}">Book Now</button>
@@ -235,6 +243,10 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   const handleDiscover = async () => {
     if (!currentBoundsRef.current || !currentCenterRef.current || isDiscovering) return;
 
+    console.log('[MapView] Starting discovery...');
+    console.log('[MapView] Current bounds:', currentBoundsRef.current);
+    console.log('[MapView] Current center:', currentCenterRef.current);
+
     setIsDiscovering(true);
 
     try {
@@ -244,13 +256,18 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         currentCenterRef.current[1]
       );
 
+      console.log('[MapView] Location data:', locationData);
+
       // Discover places in this area using real API
       const discoveredPlaces = await searchPlacesInArea({
         bounds: currentBoundsRef.current,
         searchTerm: ''
       });
 
+      console.log('[MapView] Discovered places:', discoveredPlaces?.length || 0, 'places');
+
       if (discoveredPlaces && discoveredPlaces.length > 0) {
+        console.log('[MapView] Calling onDiscoverPlaces with', discoveredPlaces.length, 'places');
         // Send discovered places to parent
         onDiscoverPlaces(discoveredPlaces, locationData);
 
@@ -264,9 +281,13 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
             }
           }
         }, 5000);
+      } else {
+        console.log('[MapView] No places found in this area. Try zooming out or moving the map.');
+        alert('No properties found in this area. Try zooming out or moving to a different location.');
       }
     } catch (error) {
-      // Discovery failed silently
+      console.error('[MapView] Discovery error:', error);
+      alert('Failed to discover places. Please try again.');
     } finally {
       setIsDiscovering(false);
     }
