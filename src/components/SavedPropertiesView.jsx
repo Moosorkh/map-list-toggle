@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import './SavedPropertiesView.css';
+import { getPlacePrice, getPlacePriceLabel } from '../utils/price';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
     const { token } = useAuth();
@@ -80,7 +82,15 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                                 {savedProperties.map(property => (
                                     <div key={property.id} className="saved-property-card" onClick={() => handlePropertyClick(property)}>
                                         <div className="saved-property-image-container">
-                                            <img src={property.imageUrl} alt={property.name} className="saved-property-image" />
+                                            <img
+                                            src={property.imageUrl || PLACEHOLDER_IMAGE}
+                                            alt={property.name}
+                                            className="saved-property-image"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null; // avoid infinite retry loop
+                                                e.currentTarget.src = PLACEHOLDER_IMAGE;
+                                            }}
+                                        />
                                             <button
                                                 className="remove-saved-button"
                                                 onClick={(e) => {
@@ -96,7 +106,7 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                                             <h3>{property.name}</h3>
                                             <p className="saved-property-description">{property.description}</p>
                                             <div className="saved-property-footer">
-                                                <span className="saved-property-price">${property.price.toLocaleString()}/night</span>
+                                                <span className="saved-property-price">{getPlacePriceLabel(property)}</span>
                                                 <span className="saved-date">Saved {new Date(property.savedDate).toLocaleDateString()}</span>
                                             </div>
                                         </div>

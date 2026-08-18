@@ -1,6 +1,7 @@
 /**
  * Utility functions for place management
  */
+import { getPlacePrice } from './price';
 
 /**
  * Deduplicate places by ID, keeping only one instance of each
@@ -22,6 +23,12 @@ export const deduplicatePlaces = (placesArray) => {
 };
 
 /**
+ * Get a numeric value for sorting when a place lacks a numeric `price`
+ * (backend places may only have a `price_range` string like "$$$").
+ */
+const getPriceValue = (place) => getPlacePrice(place) ?? 0;
+
+/**
  * Sort places by different criteria
  * @param {Array} places - Array of places to sort
  * @param {string} sortOrder - Sort order (price-asc, price-desc, name-asc)
@@ -32,9 +39,9 @@ export const sortPlaces = (places, sortOrder = 'price-asc') => {
 
     switch (sortOrder) {
         case 'price-asc':
-            return sorted.sort((a, b) => a.price - b.price);
+            return sorted.sort((a, b) => getPriceValue(a) - getPriceValue(b));
         case 'price-desc':
-            return sorted.sort((a, b) => b.price - a.price);
+            return sorted.sort((a, b) => getPriceValue(b) - getPriceValue(a));
         case 'name-asc':
             return sorted.sort((a, b) => a.name.localeCompare(b.name));
         default:
@@ -69,10 +76,12 @@ export const filterPlacesBySearch = (places, searchTerm) => {
     if (!searchTerm || !Array.isArray(places)) return places;
 
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return places.filter(place =>
-        place.name.toLowerCase().includes(lowerSearchTerm) ||
-        place.description.toLowerCase().includes(lowerSearchTerm)
-    );
+    return places.filter(place => {
+        if (!place) return false;
+        const name = (place.name || '').toLowerCase();
+        const description = (place.description || '').toLowerCase();
+        return name.includes(lowerSearchTerm) || description.includes(lowerSearchTerm);
+    });
 };
 
 /**

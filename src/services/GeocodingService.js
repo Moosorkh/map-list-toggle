@@ -3,11 +3,6 @@
  * Uses OpenStreetMap Nominatim API for location lookups
  */
 
-/**
- * GeocodingService - Handles reverse geocoding (coordinates to place names)
- * Uses OpenStreetMap Nominatim API for location lookups
- */
-
 const GeocodingService = {
   /**
    * Reverse geocode a location (lat/lng to place details)
