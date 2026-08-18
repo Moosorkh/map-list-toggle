@@ -105,7 +105,7 @@ const samplePlaces = [
     price_range: '$$',
     amenities: JSON.stringify(['WiFi', 'Kitchen', 'Workspace', 'Laundry']),
     description: 'Classic Brooklyn brownstone with authentic NYC charm.',
-    image_url: 'https://images.unsplash.com/photo-1502672260066-6bc35f0a1eef?w=800'
+    image_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
   },
   {
     id: 'hotel-la-1',
@@ -150,7 +150,7 @@ const samplePlaces = [
     price_range: '$$$',
     amenities: JSON.stringify(['WiFi', 'Kitchen', 'Beach View', 'Parking']),
     description: 'Beautiful beachfront apartment with stunning Pacific views.',
-    image_url: 'https://images.unsplash.com/photo-1502672260066-6bc35f0a1eef?w=800'
+    image_url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'
   },
   {
     id: 'resort-maldives-1',

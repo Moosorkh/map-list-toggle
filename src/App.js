@@ -426,8 +426,8 @@ function App() {
       {showBookings && (
         <BookingsView onClose={() => {
           setShowBookings(false);
-          // Update count after closing
-          setBookingsCount(BookingsService.getBookingsCount());
+          // Update count after closing (async; resolve into state)
+          BookingsService.getBookingsCount(token).then(setBookingsCount);
         }} />
       )}
 
@@ -436,8 +436,8 @@ function App() {
         <SavedPropertiesView
           onClose={() => {
             setShowSaved(false);
-            // Update count after closing
-            setSavedCount(SavedPropertiesService.getSavedPropertiesCount());
+            // Update count after closing (async; resolve into state)
+            SavedPropertiesService.getSavedPropertiesCount(token).then(setSavedCount);
           }}
           onSelectProperty={(property) => {
             setSelectedPlace(property);
