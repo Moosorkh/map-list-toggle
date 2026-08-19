@@ -5,8 +5,19 @@ import './MapView.css';
 import GeocodingService from '../services/GeocodingService';
 import { searchPlacesInArea } from '../services/PlacesService';
 import BookingModal from './BookingModal';
-import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
-import { getPlacePriceLabel } from '../utils/price';
+import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlacePrice } from '../utils/price';
+
+// Simple HTML escaping to prevent XSS when injecting API/user data into popup markup
+const escapeHtml = (value) => {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
 
 const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) => {
   const mapRef = useRef(null);
@@ -24,12 +35,6 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   const initializedRef = useRef(false);
   const isUpdatingViewportRef = useRef(false);
   const discoveryInFlightRef = useRef(false);
-  const discoveryRequestRef = useRef(0);
-  const mapGenerationRef = useRef(0);
-
-  placesRef.current = places;
-  onViewportChangeRef.current = onViewportChange;
-  onDiscoverPlacesRef.current = onDiscoverPlaces;
 
   // Initialize map - only runs once
   useEffect(() => {
@@ -39,7 +44,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     );
 
     if (!mapRef.current) {
-      // Use first place if available, otherwise will use geolocation
+      // Use first place if available, otherwise fall back to a location inside the USA
       const defaultCenter = places.length > 0
         ? [places[0].latitude, places[0].longitude]
         : DEFAULT_MAP_CENTER;
@@ -191,32 +196,38 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
             if (!map) return;
 
             const { latitude, longitude } = position.coords;
-            map.setView([latitude, longitude], 12, { animate: false });
-            
-            // Trigger discover after centering on user location
+            // Center the map on the user's location
+            mapRef.current.setView([latitude, longitude], 12, { animate: true });
+
+            // Trigger discover after centering (setView fires moveend, which
+            // populates currentBoundsRef/currentCenterRef)
             setTimeout(() => {
-              if (getCurrentMap() && currentBoundsRef.current) {
-                handleDiscover();
+              if (currentBoundsRef.current) {
+                handleDiscover({ showAlertOnEmpty: false });
               }
-            }, 500);
+            }, 600);
           },
           (error) => {
-            if (!getCurrentMap()) return;
-            console.log('Geolocation not available, using default view');
-            // Fallback: auto-discover wherever the map is
+            console.log('Geolocation unavailable or denied; using USA fallback location', error.code || error.message);
+            // Fallback: center the map on a location inside the USA, then discover there
+            mapRef.current.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { animate: true });
+
             setTimeout(() => {
-              if (getCurrentMap() && currentBoundsRef.current) {
-                handleDiscover();
+              if (currentBoundsRef.current) {
+                handleDiscover({ showAlertOnEmpty: false });
               }
-            }, 1000);
+            }, 900);
           },
-          { timeout: 5000 }
+          { timeout: 5000, maximumAge: 60000 }
         );
       } else {
-        // Auto-discover places on initial load
+        // Initial viewport report after markers are updated
+        setTimeout(handleMapMove, 100);
+
+        // Auto-discover places on initial load (defaults to the USA fallback center)
         setTimeout(() => {
-          if (getCurrentMap() && placesRef.current.length === 0 && currentBoundsRef.current) {
-            handleDiscover();
+          if (places.length === 0 && currentBoundsRef.current) {
+            handleDiscover({ showAlertOnEmpty: false });
           }
         }, 1000);
       }
@@ -238,23 +249,32 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
   // Create a custom popup with image
   const createCustomPopup = (place) => {
-    const placeImage = getPlaceImage(place);
-    const priceDisplay = getPlacePriceLabel(place);
+    // Show a real dollar amount; estimate from `price_range` when no numeric price exists
+    const numericPrice = getPlacePrice(place);
+    const priceDisplay = numericPrice != null
+      ? `$${numericPrice.toLocaleString()}/night`
+      : 'Contact for pricing';
+
+    // Escape all user/API-provided values before injecting into markup
+    const name = escapeHtml(place.name);
+    const description = escapeHtml(place.description);
+    const imageUrl = escapeHtml(place.imageUrl || place.image_url || PLACEHOLDER_IMAGE);
+    const id = escapeHtml(place.id);
 
     return `
       <div class="custom-popup">
         <div class="popup-image-container">
-          <img src="${placeImage}" alt="${place.name}" class="popup-image" onerror="this.onerror=null;this.src='${PLACEHOLDER_IMAGE}'">
+          <img src="${imageUrl}" alt="${name}" class="popup-image" onerror="this.onerror=null;this.src='${PLACEHOLDER_IMAGE}';">
           ${place.isDiscovered ? '<div class="popup-new-tag">NEW</div>' : ''}
         </div>
         <div class="popup-content">
-          <h3 class="popup-title">${place.name}</h3>
-          <p class="popup-description">${place.description || ''}</p>
+          <h3 class="popup-title">${name}</h3>
+          <p class="popup-description">${description}</p>
           <div class="popup-footer">
             <span class="popup-price">${priceDisplay}</span>
             <div class="popup-buttons">
-              <button class="popup-details-button" data-place-id="${place.id}">Details</button>
-              <button class="popup-book-button" data-place-id="${place.id}">Book Now</button>
+              <button class="popup-details-button" data-place-id="${id}">Details</button>
+              <button class="popup-book-button" data-place-id="${id}">Book Now</button>
             </div>
           </div>
         </div>
@@ -263,12 +283,26 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   };
 
   // Handle manual discovery
-  const handleDiscover = async () => {
-    if (!currentBoundsRef.current || !currentCenterRef.current || discoveryInFlightRef.current) return;
+  const handleDiscover = async ({ showAlertOnEmpty = true } = {}) => {
+    // If bounds/center haven't been captured yet (e.g. discovery fired before
+    // the first moveend), populate them from the current map view.
+    if (!currentBoundsRef.current || !currentCenterRef.current) {
+      const map = mapRef.current;
+      if (map) {
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        currentBoundsRef.current = {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest()
+        };
+        currentCenterRef.current = [center.lat, center.lng];
+      }
+    }
 
-    const requestId = ++discoveryRequestRef.current;
-    const searchBounds = { ...currentBoundsRef.current };
-    const searchCenter = [...currentCenterRef.current];
+    // Guard against overlapping/duplicate discovery (e.g. React StrictMode double-effects)
+    if (!currentBoundsRef.current || !currentCenterRef.current || isDiscovering || discoveryInFlightRef.current) return;
     discoveryInFlightRef.current = true;
 
     console.log('[MapView] Starting discovery...');
@@ -312,17 +346,18 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         }, 5000);
       } else {
         console.log('[MapView] No places found in this area. Try zooming out or moving the map.');
-        onDiscoverPlacesRef.current?.([], locationData);
-        alert('No properties found in this area. Try zooming out or moving to a different location.');
+        if (showAlertOnEmpty) {
+          alert('No properties found in this area. Try zooming out or moving to a different location.');
+        }
       }
     } catch (error) {
       console.error('[MapView] Discovery error:', error);
-      alert('Failed to discover places. Please try again.');
-    } finally {
-      if (requestId === discoveryRequestRef.current) {
-        discoveryInFlightRef.current = false;
-        setIsDiscovering(false);
+      if (showAlertOnEmpty) {
+        alert('Failed to discover places. Please try again.');
       }
+    } finally {
+      discoveryInFlightRef.current = false;
+      setIsDiscovering(false);
     }
   };
 

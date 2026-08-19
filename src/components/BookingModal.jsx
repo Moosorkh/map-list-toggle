@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import BookingsService from '../services/BookingsService';
 import './BookingModal.css';
 import { getPlacePrice } from '../utils/price';
-import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 const BookingModal = ({ place, onClose, onConfirm }) => {
     const { token } = useAuth();
@@ -54,6 +54,7 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
         const checkIn = new Date(bookingData.checkIn);
         const checkOut = new Date(bookingData.checkOut);
         const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        const pricePerNight = getPlacePrice(place) || 0;
         const total = nights * pricePerNight;
 
         const booking = {
@@ -86,8 +87,15 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
 
     const calculateTotal = () => {
         const nights = calculateNights();
+        const pricePerNight = getPlacePrice(place) || 0;
         return nights * pricePerNight;
     };
+
+    // Backend places may only have a `price_range` (e.g. "$$$"); convert to dollars
+    const numericPrice = getPlacePrice(place);
+    const pricePerNightLabel = numericPrice != null
+        ? `$${numericPrice.toLocaleString()}`
+        : 'Contact for pricing';
 
     return (
         <div className="booking-modal-overlay" onClick={onClose}>
@@ -117,14 +125,17 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
                 {/* Property info header */}
                 <div className="booking-property-header">
                     <img
-                        src={getPlaceImage(place)}
+                        src={place.imageUrl || PLACEHOLDER_IMAGE}
                         alt={place.name}
                         className="booking-property-image"
-                        onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null; // avoid infinite retry loop
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
                     />
                     <div className="booking-property-info">
                         <h2>{place.name}</h2>
-                        <p>${pricePerNight.toLocaleString()} per night</p>
+                        <p>{pricePerNightLabel}{numericPrice != null ? ' per night' : ''}</p>
                     </div>
                 </div>
 
@@ -174,8 +185,8 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
                         {calculateNights() > 0 && (
                             <div className="booking-summary">
                                 <div className="summary-row">
-                                    <span>{calculateNights()} nights × ${pricePerNight.toLocaleString()}</span>
-                                    <span>${calculateTotal().toLocaleString()}</span>
+                                    <span>{calculateNights()} nights × {pricePerNightLabel}</span>
+                                    <span>{numericPrice != null ? `$${calculateTotal().toLocaleString()}` : pricePerNightLabel}</span>
                                 </div>
                             </div>
                         )}

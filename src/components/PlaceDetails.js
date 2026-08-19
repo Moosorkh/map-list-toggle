@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import BookingModal from './BookingModal';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import { getPlacePrice } from '../utils/price';
-import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceDetails = ({ place, onClose }) => {
   const { token } = useAuth();
@@ -12,9 +12,12 @@ const PlaceDetails = ({ place, onClose }) => {
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
 
-  const estimatedPrice = getPlacePrice(place) || 150;
-  const formattedPrice = estimatedPrice.toLocaleString();
-  const priceDisplay = place.price_range || `$${formattedPrice}`;
+  // Show a real dollar amount (estimating from price_range when needed)
+  const numericPrice = getPlacePrice(place);
+  const estimatedPrice = numericPrice || 0; // used for booking totals
+  const priceDisplay = numericPrice != null
+    ? `$${numericPrice.toLocaleString()}`
+    : 'Contact for pricing';
 
   // Check if property is saved
   useEffect(() => {
@@ -80,11 +83,14 @@ const PlaceDetails = ({ place, onClose }) => {
           <div className="place-details-content">
             <div className="details-image-section">
               <img
-                src={getPlaceImage(place)}
+                src={place.imageUrl || PLACEHOLDER_IMAGE}
                 alt={place.name}
                 loading="lazy"
                 className="place-details-image"
-                onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null; // avoid infinite retry loop
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
               />
               {place.isDiscovered && (
                 <div className="discovery-badge-details">
@@ -98,7 +104,7 @@ const PlaceDetails = ({ place, onClose }) => {
                 <h2>{place.name}</h2>
                 <div className="price-badge">
                   <span className="price-amount">{priceDisplay}</span>
-                  <span className="price-label">{place.price_range ? '' : 'per night'}</span>
+                  <span className="price-label">{numericPrice != null ? 'per night' : ''}</span>
                 </div>
               </div>
 

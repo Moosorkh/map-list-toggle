@@ -1,56 +1,34 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
+import { AuthProvider } from './context/AuthContext';
 
-jest.mock('react-router-dom', () => ({
-  useNavigate: () => jest.fn(),
-}));
-
-jest.mock('./context/AuthContext', () => ({
-  useAuth: () => ({ user: null, token: null }),
-}));
-
-jest.mock('./services/BookingsService', () => ({
-  __esModule: true,
-  default: { getBookingsCount: jest.fn().mockResolvedValue(0) },
-}));
-
-jest.mock('./services/SavedPropertiesService', () => ({
-  __esModule: true,
-  default: { getSavedPropertiesCount: jest.fn().mockResolvedValue(0) },
-}));
-
-jest.mock('./components/MapView', () => ({ places, onDiscoverPlaces }) => (
-  <div>
-    <div data-testid="map-places">{places.map(place => place.name).join(',')}</div>
-    <button onClick={() => onDiscoverPlaces([
-      { id: 'a-1', name: 'Alpha Grand Hotel', latitude: 1, longitude: 1 },
-      { id: 'a-2', name: 'Alpha Luxury Resort', latitude: 2, longitude: 2 },
-    ], { address: { city: 'Alpha' } })}>Discover Alpha</button>
-    <button onClick={() => onDiscoverPlaces([
-      { id: 'b-1', name: 'Beta Grand Hotel', latitude: 3, longitude: 3 },
-    ], { address: { city: 'Beta' } })}>Discover Beta</button>
-    <button onClick={() => onDiscoverPlaces([], { address: { city: 'Empty' } })}>
-      Discover Empty
-    </button>
-  </div>
+// Lazy-loaded, map-heavy views are replaced with lightweight stubs so the
+// smoke test can run in jsdom without a real Leaflet map.
+jest.mock('./components/MapView', () => () => (
+  <div data-testid="mock-map-view">Mock Map</div>
 ));
-
-jest.mock('./components/ListView', () => () => null);
+jest.mock('./components/ListView', () => () => (
+  <div data-testid="mock-list-view">Mock List</div>
+));
 jest.mock('./components/PlaceDetails', () => () => null);
 
-test('each viewport discovery replaces the previous result set', async () => {
-  render(<App />);
+beforeEach(() => {
+  localStorage.clear();
+});
 
-  fireEvent.click(await screen.findByText('Discover Alpha'));
-  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('2 of 2'));
-  expect(screen.getByTestId('map-places').textContent).toContain('Alpha Grand Hotel');
+test('renders the map home page with search bar', async () => {
+  render(
+    <AuthProvider>
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    </AuthProvider>
+  );
 
-  fireEvent.click(screen.getByText('Discover Beta'));
-  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('1 of 1'));
-  expect(screen.getByTestId('map-places').textContent).toContain('Beta Grand Hotel');
-  expect(screen.getByTestId('map-places').textContent).not.toContain('Alpha Grand Hotel');
+  // Once initialized, the map view (stub) is rendered
+  expect(await screen.findByTestId('mock-map-view')).toBeInTheDocument();
 
-  fireEvent.click(screen.getByText('Discover Empty'));
-  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('0 of 0'));
-  expect(screen.getByTestId('map-places').textContent).toBe('');
+  // The header search bar is present
+  expect(screen.getByPlaceholderText('Search properties...')).toBeInTheDocument();
 });

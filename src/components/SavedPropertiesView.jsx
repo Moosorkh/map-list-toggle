@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import './SavedPropertiesView.css';
-import { getPlacePriceLabel } from '../utils/price';
-import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlacePrice, getPlacePriceLabel } from '../utils/price';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
     const { token } = useAuth();
@@ -83,11 +83,14 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                                     <div key={property.id} className="saved-property-card" onClick={() => handlePropertyClick(property)}>
                                         <div className="saved-property-image-container">
                                             <img
-                                                src={getPlaceImage(property)}
-                                                alt={property.name}
-                                                className="saved-property-image"
-                                                onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
-                                            />
+                                            src={property.imageUrl || PLACEHOLDER_IMAGE}
+                                            alt={property.name}
+                                            className="saved-property-image"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null; // avoid infinite retry loop
+                                                e.currentTarget.src = PLACEHOLDER_IMAGE;
+                                            }}
+                                        />
                                             <button
                                                 className="remove-saved-button"
                                                 onClick={(e) => {

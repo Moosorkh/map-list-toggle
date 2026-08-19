@@ -10,6 +10,9 @@ export const PLACEHOLDER_IMAGE = PLACEHOLDER_IMAGE_ASSET;
 export const DEFAULT_MAP_CENTER = [34.0195, -118.4912];
 export const DEFAULT_MAP_ZOOM = 10;
 
+// Fallback image used when a place photo is missing or fails to load
+export const PLACEHOLDER_IMAGE = '/assets/Place-image.jpg';
+
 // Property images from Unsplash
 export const PROPERTY_IMAGES = [
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",

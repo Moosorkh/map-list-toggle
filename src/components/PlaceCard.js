@@ -1,10 +1,15 @@
 import React, { memo } from 'react';
 import './PlaceCard.css';
-import { getPlacePrice, getPlacePriceLabel } from '../utils/price';
-import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlacePrice } from '../utils/price';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
-  const hasPrice = getPlacePrice(place) != null;
+  // Backend places may only have a `price_range` (e.g. "$$$"); convert to dollars
+  const numericPrice = getPlacePrice(place);
+  const hasPrice = numericPrice != null;
+  const formattedPrice = hasPrice
+    ? `$${numericPrice.toLocaleString()}`
+    : 'Contact for pricing';
 
   // Prevent default button click from bubbling
   const handleDetailsClick = (e) => {
@@ -32,11 +37,14 @@ const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
       >
         <div className="image-container">
           <img
-            src={getPlaceImage(place)}
+            src={place.imageUrl || PLACEHOLDER_IMAGE}
             alt={place.name}
             loading="lazy"
             className="place-image"
-            onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
+            onError={(e) => {
+              e.currentTarget.onerror = null; // avoid infinite retry loop
+              e.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
           />
           {place.isDiscovered && (
             <div className="new-badge">New</div>
@@ -49,8 +57,8 @@ const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
 
           <div className="place-footer">
             <div className="place-price">
-              <strong>{getPlacePriceLabel(place)}</strong>
-              {!hasPrice && <span className="price-period"></span>}
+              <strong>{formattedPrice}</strong>
+              {hasPrice && <span className="price-period">/night</span>}
             </div>
 
             <div className="place-actions">
