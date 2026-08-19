@@ -5,7 +5,7 @@ import './MapView.css';
 import GeocodingService from '../services/GeocodingService';
 import { searchPlacesInArea } from '../services/PlacesService';
 import BookingModal from './BookingModal';
-import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, PLACEHOLDER_IMAGE } from '../config/constants';
+import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 import { getPlacePrice } from '../utils/price';
 
 // Simple HTML escaping to prevent XSS when injecting API/user data into popup markup
@@ -264,7 +264,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     // Escape all user/API-provided values before injecting into markup
     const name = escapeHtml(place.name);
     const description = escapeHtml(place.description);
-    const imageUrl = escapeHtml(place.imageUrl || place.image_url || PLACEHOLDER_IMAGE);
+    const imageUrl = escapeHtml(getPlaceImage(place));
     const id = escapeHtml(place.id);
 
     return `

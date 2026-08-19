@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import BookingsService from '../services/BookingsService';
 import './BookingModal.css';
 import { getPlacePrice } from '../utils/price';
-import { PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const BookingModal = ({ place, onClose, onConfirm }) => {
     const { token } = useAuth();
@@ -125,7 +125,7 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
                 {/* Property info header */}
                 <div className="booking-property-header">
                     <img
-                        src={place.imageUrl || PLACEHOLDER_IMAGE}
+                        src={getPlaceImage(place)}
                         alt={place.name}
                         className="booking-property-image"
                         onError={(e) => {

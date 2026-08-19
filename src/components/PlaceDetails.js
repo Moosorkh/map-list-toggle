@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import BookingModal from './BookingModal';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import { getPlacePrice } from '../utils/price';
-import { PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceDetails = ({ place, onClose }) => {
   const { token } = useAuth();
@@ -83,7 +83,7 @@ const PlaceDetails = ({ place, onClose }) => {
           <div className="place-details-content">
             <div className="details-image-section">
               <img
-                src={place.imageUrl || PLACEHOLDER_IMAGE}
+                src={getPlaceImage(place)}
                 alt={place.name}
                 loading="lazy"
                 className="place-details-image"

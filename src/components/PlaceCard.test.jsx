@@ -35,4 +35,10 @@ describe('PlaceCard', () => {
     fireEvent.error(img);
     expect(img).toHaveAttribute('src', PLACEHOLDER_IMAGE);
   });
+
+  test('uses a sample property image when the provider has no photo', () => {
+    render(<PlaceCard place={{ ...basePlace, imageUrl: '' }} />);
+    const img = screen.getByRole('img', { name: basePlace.name });
+    expect(img.getAttribute('src')).toMatch(/^https:\/\/images\.unsplash\.com\//);
+  });
 });

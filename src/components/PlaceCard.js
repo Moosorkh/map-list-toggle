@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import './PlaceCard.css';
 import { getPlacePrice } from '../utils/price';
-import { PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
   // Backend places may only have a `price_range` (e.g. "$$$"); convert to dollars
@@ -37,7 +37,7 @@ const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
       >
         <div className="image-container">
           <img
-            src={place.imageUrl || PLACEHOLDER_IMAGE}
+            src={getPlaceImage(place)}
             alt={place.name}
             loading="lazy"
             className="place-image"

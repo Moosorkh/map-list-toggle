@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import SavedPropertiesService from '../services/SavedPropertiesService';
 import './SavedPropertiesView.css';
 import { getPlacePrice, getPlacePriceLabel } from '../utils/price';
-import { PLACEHOLDER_IMAGE } from '../config/constants';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
     const { token } = useAuth();
@@ -83,7 +83,7 @@ const SavedPropertiesView = ({ onClose, onSelectProperty }) => {
                                     <div key={property.id} className="saved-property-card" onClick={() => handlePropertyClick(property)}>
                                         <div className="saved-property-image-container">
                                             <img
-                                            src={property.imageUrl || PLACEHOLDER_IMAGE}
+                                            src={getPlaceImage(property)}
                                             alt={property.name}
                                             className="saved-property-image"
                                             onError={(e) => {
