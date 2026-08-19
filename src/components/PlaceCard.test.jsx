@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import PlaceCard from './PlaceCard';
+import { PLACEHOLDER_IMAGE } from '../config/constants';
 
 describe('PlaceCard', () => {
   const basePlace = {
@@ -32,6 +33,6 @@ describe('PlaceCard', () => {
     render(<PlaceCard place={{ ...basePlace, imageUrl: 'https://example.com/broken.jpg' }} />);
     const img = screen.getByRole('img', { name: basePlace.name });
     fireEvent.error(img);
-    expect(img).toHaveAttribute('src', '/assets/Place-image.jpg');
+    expect(img).toHaveAttribute('src', PLACEHOLDER_IMAGE);
   });
 });
