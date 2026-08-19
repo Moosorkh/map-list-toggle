@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
 import './PlaceCard.css';
+import { getPlacePrice, getPlacePriceLabel } from '../utils/price';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
-  // Format price with commas
-  const formattedPrice = place.price.toLocaleString();
+  const hasPrice = getPlacePrice(place) != null;
 
   // Prevent default button click from bubbling
   const handleDetailsClick = (e) => {
@@ -31,10 +32,11 @@ const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
       >
         <div className="image-container">
           <img
-            src={place.imageUrl}
+            src={getPlaceImage(place)}
             alt={place.name}
             loading="lazy"
             className="place-image"
+            onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
           />
           {place.isDiscovered && (
             <div className="new-badge">New</div>
@@ -47,8 +49,8 @@ const PlaceCard = ({ place, onClick, isSelected, onBook }) => {
 
           <div className="place-footer">
             <div className="place-price">
-              <strong>${formattedPrice}</strong>
-              <span className="price-period">/night</span>
+              <strong>{getPlacePriceLabel(place)}</strong>
+              {!hasPrice && <span className="price-period"></span>}
             </div>
 
             <div className="place-actions">

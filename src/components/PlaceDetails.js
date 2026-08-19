@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import BookingModal from './BookingModal';
 import SavedPropertiesService from '../services/SavedPropertiesService';
+import { getPlacePrice } from '../utils/price';
+import { getPlaceImage, PLACEHOLDER_IMAGE } from '../config/constants';
 
 const PlaceDetails = ({ place, onClose }) => {
   const { token } = useAuth();
@@ -10,22 +12,7 @@ const PlaceDetails = ({ place, onClose }) => {
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
 
-  // Convert price_range to estimated numeric price for display
-  const getEstimatedPrice = () => {
-    if (place.price && typeof place.price === 'number') {
-      return place.price;
-    }
-    // Convert price_range ($, $$, $$$, $$$$) to estimated price
-    const priceRangeMap = {
-      '$': 50,
-      '$$': 150,
-      '$$$': 300,
-      '$$$$': 600
-    };
-    return priceRangeMap[place.price_range] || 150;
-  };
-
-  const estimatedPrice = getEstimatedPrice();
+  const estimatedPrice = getPlacePrice(place) || 150;
   const formattedPrice = estimatedPrice.toLocaleString();
   const priceDisplay = place.price_range || `$${formattedPrice}`;
 
@@ -93,10 +80,11 @@ const PlaceDetails = ({ place, onClose }) => {
           <div className="place-details-content">
             <div className="details-image-section">
               <img
-                src={place.imageUrl}
+                src={getPlaceImage(place)}
                 alt={place.name}
                 loading="lazy"
                 className="place-details-image"
+                onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE; }}
               />
               {place.isDiscovered && (
                 <div className="discovery-badge-details">

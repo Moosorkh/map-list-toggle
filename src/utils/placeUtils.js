@@ -1,6 +1,7 @@
 /**
  * Utility functions for place management
  */
+import { getPlacePrice } from './price';
 
 /**
  * Deduplicate places by ID, keeping only one instance of each
@@ -32,9 +33,9 @@ export const sortPlaces = (places, sortOrder = 'price-asc') => {
 
     switch (sortOrder) {
         case 'price-asc':
-            return sorted.sort((a, b) => a.price - b.price);
+            return sorted.sort((a, b) => (getPlacePrice(a) ?? 0) - (getPlacePrice(b) ?? 0));
         case 'price-desc':
-            return sorted.sort((a, b) => b.price - a.price);
+            return sorted.sort((a, b) => (getPlacePrice(b) ?? 0) - (getPlacePrice(a) ?? 0));
         case 'name-asc':
             return sorted.sort((a, b) => a.name.localeCompare(b.name));
         default:
