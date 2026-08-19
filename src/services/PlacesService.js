@@ -67,7 +67,7 @@ export const searchPlacesInArea = async ({ bounds, searchTerm = '' }) => {
       console.warn('PlacesService: Make sure backend is running or set REACT_APP_API_BASE_URL');
     }
     
-    return [];
+    throw error;
   }
 };
 

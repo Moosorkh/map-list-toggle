@@ -102,7 +102,7 @@ const ListView = ({ places, onSelectPlace }) => {
           </select>
         </div>
         <div className="results-count">
-          {visiblePlacesToRender.length} {visiblePlacesToRender.length !== 1 ? 'properties' : 'property'} found
+          {memoizedPlaces.length} {memoizedPlaces.length !== 1 ? 'properties' : 'property'} found
         </div>
       </div>
 

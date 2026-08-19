@@ -3,13 +3,34 @@ const db = require('../db');
 const FoursquareService = require('../services/FoursquareService');
 
 const router = express.Router();
+const PREMIUM_PATTERN = /luxury|ritz(?:-carlton)?|four seasons|waldorf astoria|mandarin oriental|st.? regis|park hyatt|intercontinental|fairmont|peninsula|rosewood|aman|belmond|westin|alila|kimpton|conrad|edition|jw marriott|viceroy|montage|auberge|langham|sofitel|loews|noble house|lxr/i;
+const RESORT_AMENITY_PATTERN = /resort.*(?:spa|beach|golf|casino|ocean|waterfront)|(?:spa|beach|golf|casino|ocean|waterfront).*resort/i;
+const NON_HOTEL_PATTERN = /resort style/i;
+
+const isLuxuryPlace = place => {
+  const type = String(place.type || '').toLowerCase();
+  if (!type.includes('hotel') && !type.includes('resort')) return false;
+
+  if (String(place.id).startsWith('osm_')) {
+    return !NON_HOTEL_PATTERN.test(place.name || '') && (Number(place.rating) >= 4
+      || PREMIUM_PATTERN.test(place.name || '')
+      || RESORT_AMENITY_PATTERN.test(place.name || ''));
+  }
+
+  return String(place.price_range || '').length >= 3
+    || Number(place.rating) >= 4.5
+    || PREMIUM_PATTERN.test(place.name || '');
+};
 
 // Search places within bounds with API integration and caching
 router.post('/search', async (req, res) => {
   try {
     const { bounds, searchTerm } = req.body;
 
-    if (!bounds || !bounds.north || !bounds.south || !bounds.east || !bounds.west) {
+    const hasValidBounds = bounds && ['north', 'south', 'east', 'west']
+      .every(key => Number.isFinite(Number(bounds[key])));
+
+    if (!hasValidBounds || Number(bounds.south) > Number(bounds.north)) {
       return res.status(400).json({ error: 'Invalid bounds' });
     }
 
@@ -17,7 +38,16 @@ router.post('/search', async (req, res) => {
     let query = `
       SELECT * FROM places
       WHERE latitude BETWEEN ? AND ?
-        AND longitude BETWEEN ? AND ?
+        AND ${Number(bounds.west) <= Number(bounds.east)
+          ? 'longitude BETWEEN ? AND ?'
+          : '(longitude >= ? OR longitude <= ?)'}
+        AND (LOWER(type) LIKE '%hotel%' OR LOWER(type) LIKE '%resort%')
+        AND (
+          LENGTH(COALESCE(price_range, '')) >= 3
+          OR COALESCE(rating, 0) >= 4.5
+          OR LOWER(name) LIKE '%luxury%'
+          OR LOWER(name) LIKE '%grand%'
+        )
     `;
     const params = [bounds.south, bounds.north, bounds.west, bounds.east];
 
@@ -30,7 +60,7 @@ router.post('/search', async (req, res) => {
 
     query += ` LIMIT 100`;
 
-    let places = db.prepare(query).all(...params);
+    let places = db.prepare(query).all(...params).filter(isLuxuryPlace);
 
     // Step 2: If cache has fewer than 5 results, fetch from API and store
     if (places.length < 5) {
@@ -87,7 +117,7 @@ router.post('/search', async (req, res) => {
           insertMany(apiPlaces);
           
           // Re-query database to get cached + new results
-          places = db.prepare(query).all(...params);
+          places = db.prepare(query).all(...params).filter(isLuxuryPlace);
         }
       } catch (apiError) {
         console.error('PlacesRoute: API fetch failed, using cached results only:', apiError.message);

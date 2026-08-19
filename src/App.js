@@ -1,18 +1,14 @@
 import React, { useEffect, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './components/SearchBar';
-import LocationSelector from './components/LocationSelector';
 import LoadingSpinner from './components/LoadingSpinner';
 import BookingsView from './components/BookingsView';
 import SavedPropertiesView from './components/SavedPropertiesView';
 import { useAppState } from './hooks/useAppState';
 import { getDisplayedPlaces } from './utils/placeUtils';
-import locationManager from './services/LocationManager';
 import BookingsService from './services/BookingsService';
 import SavedPropertiesService from './services/SavedPropertiesService';
-import { searchPlacesInArea } from './services/PlacesService';
 import { useAuth } from './context/AuthContext';
-import { DEFAULT_MAP_CENTER } from './config/constants';
 import './App.css';
 
 // Lazy load components for better performance
@@ -57,8 +53,6 @@ function App() {
     setCurrentLocation,
     setSelectedPlace,
     setMapState,
-    setLocations,
-    setCurrentLocationId,
     setIsLoading,
     setDiscoveredPlaces,
     setDiscoveryInProgress
@@ -66,64 +60,12 @@ function App() {
 
   // Initialize the app
   useEffect(() => {
-    const initializeApp = async () => {
-      setIsLoading(true);
-      
-      // Clean up any existing empty locations
-      locationManager.cleanupEmptyLocations();
-
-      // Check if we already have locations
-      const existingLocations = locationManager.getAllLocations();
-
-      if (existingLocations.length > 0) {
-        // Use the first location (most recent)
-        const firstLocation = existingLocations[0];
-        setCurrentLocationId(firstLocation.id);
-        setAllPlaces(firstLocation.places);
-        setDisplayedPlaces(firstLocation.places);
-        setCurrentLocation(firstLocation.name);
-      } else {
-        // Create empty initial location - map will auto-discover based on user's location
-        const initialLocationId = locationManager.addLocation(
-          'Discovering...',
-          DEFAULT_MAP_CENTER,
-          []
-        );
-
-        setCurrentLocationId(initialLocationId);
-        setAllPlaces([]);
-        setDisplayedPlaces([]);
-        setCurrentLocation('Discovering...');
-      }
-
-      // Update locations list
-      setLocations(locationManager.getAllLocations());
-      setIsLoading(false);
-    };
-
-    initializeApp();
+    setAllPlaces([]);
+    setDisplayedPlaces([]);
+    setCurrentLocation('Discovering...');
+    setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // When current location changes, update places
-  useEffect(() => {
-    if (state.currentLocationId) {
-      const location = locationManager.getCurrentLocation();
-      if (location) {
-        setAllPlaces(location.places);
-        setCurrentLocation(location.name);
-
-        // If not in search mode, update displayed places
-        if (!state.searchTerm) {
-          setDisplayedPlaces(location.places);
-        } else {
-          // Apply search filter to the new location's places
-          const filtered = getDisplayedPlaces(location.places, state.view, state.searchTerm, state.mapState.bounds);
-          setDisplayedPlaces(filtered);
-        }
-      }
-    }
-  }, [state.currentLocationId, state.searchTerm, state.view, state.mapState.bounds]);
 
   // Filter places based on search term and view
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,9 +89,7 @@ function App() {
   const handleDiscoverPlaces = async (newPlaces, locationData) => {
     console.log('[App] handleDiscoverPlaces called with', newPlaces?.length || 0, 'places');
     
-    // Guard against empty places or discovery in progress
-    if (!newPlaces || newPlaces.length === 0 || state.discoveryInProgress) {
-      console.log('[App] Skipping discovery: empty places or already in progress');
+    if (!Array.isArray(newPlaces) || state.discoveryInProgress) {
       return;
     }
 
@@ -169,53 +109,10 @@ function App() {
         }
       }
 
-      // Create a distinct location in our data model if it doesn't exist
-      // First check if we already have a location with this name
-      const existingLocation = state.locations.find(loc => loc.name === locationName);
-
-      if (existingLocation) {
-        // Add new places to existing location - no duplicates
-        const existingPlaceIds = new Set(existingLocation.places.map(p => p.id));
-        const uniqueNewPlaces = newPlaces.filter(p => !existingPlaceIds.has(p.id));
-
-        if (uniqueNewPlaces.length === 0) {
-          setDiscoveryInProgress(false);
-          return;
-        }
-
-        // Add places to existing location
-        locationManager.addPlacesToLocation(existingLocation.id, uniqueNewPlaces);
-
-        // Get the updated location from manager to ensure consistency
-        const updatedLocation = locationManager.getCurrentLocation();
-        
-        // Update all related state immediately to trigger re-render
-        setLocations(locationManager.getAllLocations());
-        setAllPlaces(updatedLocation.places);
-        setDisplayedPlaces(updatedLocation.places);
-        setDiscoveredPlaces(uniqueNewPlaces);
-        setCurrentLocation(updatedLocation.name);
-      } else {
-        // New location - add it to the manager with limited places (max 5)
-        const limitedPlaces = newPlaces.slice(0, 5);
-        const center = state.mapState.center || DEFAULT_MAP_CENTER;
-        const newLocationId = locationManager.addLocation(locationName, center, limitedPlaces);
-
-        // Get the newly created location from manager
-        const newLocation = locationManager.getCurrentLocation();
-
-        // Update all related state immediately
-        setCurrentLocationId(newLocationId);
-        setCurrentLocation(newLocation.name);
-        setAllPlaces(newLocation.places);
-        setDisplayedPlaces(newLocation.places);
-        setDiscoveredPlaces(limitedPlaces);
-        setLocations(locationManager.getAllLocations());
-      }
-
-      // Clean up any empty locations that might exist
-      locationManager.cleanupEmptyLocations();
-      setLocations(locationManager.getAllLocations());
+      setCurrentLocation(locationName);
+      setAllPlaces(newPlaces);
+      setDisplayedPlaces(newPlaces);
+      setDiscoveredPlaces(newPlaces);
     } finally {
       setDiscoveryInProgress(false);
     }
@@ -233,55 +130,6 @@ function App() {
     }
   };
 
-  // Handle location selection change
-  const handleLocationChange = (locationId) => {
-    if (locationManager.setCurrentLocation(locationId)) {
-      setCurrentLocationId(locationId);
-
-      // Reset discovered places indicator when switching locations
-      setDiscoveredPlaces([]);
-    }
-  };
-
-  // Delete a location
-  const handleDeleteLocation = (locationId) => {
-    // Don't allow deleting the last location
-    if (state.locations.length <= 1) return;
-
-    // Remove the location
-    locationManager.removeLocation(locationId);
-
-    // Clean up empty locations
-    locationManager.cleanupEmptyLocations();
-
-    // Update the state with remaining locations
-    setLocations(locationManager.getAllLocations());
-
-    // Current location is automatically updated in the location manager
-    setCurrentLocationId(locationManager.currentLocationId);
-
-    // Update places
-    const currentLocation = locationManager.getCurrentLocation();
-    if (currentLocation) {
-      setAllPlaces(currentLocation.places);
-      setDisplayedPlaces(currentLocation.places);
-      setCurrentLocation(currentLocation.name);
-    } else {
-      // If no locations with places, create a new default location
-      const initialLocationId = locationManager.addLocation(
-        'California',
-        DEFAULT_MAP_CENTER,
-        []
-      );
-
-      setCurrentLocationId(initialLocationId);
-      setAllPlaces([]);
-      setDisplayedPlaces([]);
-      setCurrentLocation('California');
-      setLocations(locationManager.getAllLocations());
-    }
-  };
-
   if (state.isLoading) {
     return <LoadingSpinner message="Initializing app..." />;
   }
@@ -296,13 +144,6 @@ function App() {
             onChange={setSearchTerm}
           />
 
-          {/* Location selector */}
-          <LocationSelector
-            locations={state.locations}
-            currentLocationId={state.currentLocationId}
-            onLocationChange={handleLocationChange}
-            onDeleteLocation={handleDeleteLocation}
-          />
         </div>
 
         <div className="header-right">
@@ -355,11 +196,10 @@ function App() {
         <Suspense fallback={<LoadingSpinner message="Loading map view..." />}>
           {state.view === 'map' ? (
             <MapView
-              places={state.displayedPlaces}
+              places={state.allPlaces}
               onViewportChange={handleViewportChange}
               onDiscoverPlaces={handleDiscoverPlaces}
               onSelectPlace={setSelectedPlace}
-              currentLocationId={state.currentLocationId}
             />
           ) : (
             <ListView

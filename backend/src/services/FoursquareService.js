@@ -1,4 +1,5 @@
 const https = require('https');
+const OpenStreetMapService = require('./OpenStreetMapService');
 
 /**
  * FoursquareService - Fetches real hospitality places from Foursquare Places API
@@ -8,15 +9,10 @@ const https = require('https');
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
 const BASE_URL = 'https://api.foursquare.com/v3/places/search';
 
-// Hospitality categories in Foursquare
-const HOSPITALITY_CATEGORIES = [
-  '19014', // Hotels & Lodging
-  '19032', // Bed & Breakfast
-  '19033', // Hostel
+// Target inventory: hotels and resorts only.
+const LUXURY_HOTEL_CATEGORIES = [
   '19034', // Hotel
-  '19035', // Motel
   '19036', // Resort
-  '19037', // Vacation Rental
 ];
 
 /**
@@ -27,8 +23,8 @@ const HOSPITALITY_CATEGORIES = [
  */
 async function searchPlaces(bounds, searchTerm = '') {
   if (!FOURSQUARE_API_KEY) {
-    console.warn('FoursquareService: No API key configured, skipping external fetch');
-    return [];
+    console.warn('FoursquareService: No API key configured, using OpenStreetMap fallback');
+    return OpenStreetMapService.searchPlaces(bounds, searchTerm);
   }
 
   try {
@@ -44,13 +40,10 @@ async function searchPlaces(bounds, searchTerm = '') {
     const params = new URLSearchParams({
       ll: `${centerLat},${centerLng}`,
       radius: Math.round(radius),
-      categories: HOSPITALITY_CATEGORIES.join(','),
+      categories: LUXURY_HOTEL_CATEGORIES.join(','),
+      query: searchTerm.trim() || 'luxury hotel',
       limit: 50,
     });
-
-    if (searchTerm && searchTerm.trim()) {
-      params.set('query', searchTerm.trim());
-    }
 
     const url = `${BASE_URL}?${params.toString()}`;
 
@@ -62,11 +55,24 @@ async function searchPlaces(bounds, searchTerm = '') {
     }
 
     // Normalize to our schema
-    return results.results.map(normalizeFoursquarePlace).filter(Boolean);
+    const places = results.results
+      .map(normalizeFoursquarePlace)
+      .filter(place => place && isLuxuryHotel(place));
+
+    return places.length > 0
+      ? places
+      : OpenStreetMapService.searchPlaces(bounds, searchTerm);
   } catch (error) {
     console.error('FoursquareService: Failed to fetch places:', error.message);
-    return [];
+    return OpenStreetMapService.searchPlaces(bounds, searchTerm);
   }
+}
+
+function isLuxuryHotel(place) {
+  const type = place.type.toLowerCase();
+  const isHotelOrResort = type.includes('hotel') || type.includes('resort');
+  const isHighEnd = place.price_range.length >= 3 || (place.rating ?? 0) >= 4.5;
+  return isHotelOrResort && isHighEnd;
 }
 
 /**

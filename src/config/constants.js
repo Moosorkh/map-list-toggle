@@ -1,6 +1,9 @@
 /**
  * Shared constants and configuration for the app
  */
+import PLACEHOLDER_IMAGE_ASSET from '../public/assets/Place-image.jpg';
+
+export const PLACEHOLDER_IMAGE = PLACEHOLDER_IMAGE_ASSET;
 
 // Default map center (Los Angeles - Santa Monica/Beverly Hills area where seeded places are)
 // Centered at Venice Beach/Santa Monica where most LA seeded places are located
@@ -33,6 +36,16 @@ export const PROPERTY_IMAGES = [
     "https://images.unsplash.com/photo-1600047509782-20d39509f26d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
 ];
+
+export const getPlaceImage = (place) => {
+    const providerImage = place?.imageUrl || place?.image_url;
+    if (providerImage) return providerImage;
+
+    const imageKey = String(place?.id || place?.name || 'property');
+    const imageIndex = [...imageKey].reduce((hash, character) => hash + character.charCodeAt(0), 0)
+        % PROPERTY_IMAGES.length;
+    return PROPERTY_IMAGES[imageIndex];
+};
 
 // Get a random image URL
 export const getRandomImage = () => {

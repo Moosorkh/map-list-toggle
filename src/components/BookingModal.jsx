@@ -18,6 +18,7 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
 
     const [step, setStep] = useState(1); // 1: dates, 2: details, 3: confirmation
     const [errors, setErrors] = useState({});
+    const pricePerNight = getPlacePrice(place) || 0;
 
     const validateStep1 = () => {
         const newErrors = {};
@@ -60,7 +61,7 @@ const BookingModal = ({ place, onClose, onConfirm }) => {
             place: {
                 id: place.id,
                 name: place.name,
-                imageUrl: place.imageUrl || place.image_url,
+                imageUrl: getPlaceImage(place),
                 price: pricePerNight,
             },
             ...bookingData,

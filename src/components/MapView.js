@@ -22,6 +22,9 @@ const escapeHtml = (value) => {
 const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) => {
   const mapRef = useRef(null);
   const markersRef = useRef({});
+  const placesRef = useRef(places);
+  const onViewportChangeRef = useRef(onViewportChange);
+  const onDiscoverPlacesRef = useRef(onDiscoverPlaces);
   const [mapReady, setMapReady] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [showDiscoverButton, setShowDiscoverButton] = useState(true); // Show by default
@@ -35,6 +38,11 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
   // Initialize map - only runs once
   useEffect(() => {
+    const generation = ++mapGenerationRef.current;
+    const getCurrentMap = () => (
+      mapGenerationRef.current === generation ? mapRef.current : null
+    );
+
     if (!mapRef.current) {
       // Use first place if available, otherwise fall back to a location inside the USA
       const defaultCenter = places.length > 0
@@ -86,6 +94,12 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
           return;
         }
 
+        if (discoveryInFlightRef.current) {
+          discoveryRequestRef.current += 1;
+          discoveryInFlightRef.current = false;
+          setIsDiscovering(false);
+        }
+
         // Check if any popups are open - if so, we'll throttle updates
         const openPopups = document.querySelectorAll('.leaflet-popup');
         const hasOpenPopups = openPopups.length > 0;
@@ -119,7 +133,7 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         }
 
         // Notify parent about viewport changes - use setTimeout to break the rendering cycle
-        if (onViewportChange) {
+        if (onViewportChangeRef.current) {
           // If popups are open, we throttle updates to avoid re-render loops
           if (hasOpenPopups) {
             // Clear existing timeout
@@ -129,11 +143,11 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
             // Set a new timeout - this ensures we only update after user has stopped moving
             window.viewportUpdateTimeout = setTimeout(() => {
-              const visiblePlaces = places.filter(place =>
+              const visiblePlaces = placesRef.current.filter(place =>
                 bounds.contains([place.latitude, place.longitude])
               );
 
-              onViewportChange({
+              onViewportChangeRef.current({
                 visiblePlaces,
                 mapState: {
                   center: [center.lat, center.lng],
@@ -146,11 +160,11 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
             }, 200); // Throttle viewport updates during popup interaction
           } else {
             // No popups open, update normally
-            const visiblePlaces = places.filter(place =>
+            const visiblePlaces = placesRef.current.filter(place =>
               bounds.contains([place.latitude, place.longitude])
             );
 
-            onViewportChange({
+            onViewportChangeRef.current({
               visiblePlaces,
               mapState: {
                 center: [center.lat, center.lng],
@@ -172,11 +186,15 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
       initializedRef.current = true;
       setMapReady(true);
+      setTimeout(handleMapMove, 100);
 
       // Try to get user's actual location using browser geolocation
       if (places.length === 0 && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            const map = getCurrentMap();
+            if (!map) return;
+
             const { latitude, longitude } = position.coords;
             // Center the map on the user's location
             mapRef.current.setView([latitude, longitude], 12, { animate: true });
@@ -216,7 +234,12 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     }
 
     return () => {
+      if (mapGenerationRef.current === generation) {
+        mapGenerationRef.current += 1;
+      }
       if (mapRef.current) {
+        mapRef.current.stop();
+        mapRef.current.off();
         mapRef.current.remove();
         mapRef.current = null;
         initializedRef.current = false;
@@ -291,24 +314,25 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
     try {
       // Get location name first
       const locationData = await GeocodingService.reverseGeocode(
-        currentCenterRef.current[0],
-        currentCenterRef.current[1]
+        searchCenter[0],
+        searchCenter[1]
       );
 
       console.log('[MapView] Location data:', locationData);
 
       // Discover places in this area using real API
       const discoveredPlaces = await searchPlacesInArea({
-        bounds: currentBoundsRef.current,
+        bounds: searchBounds,
         searchTerm: ''
       });
 
+      if (requestId !== discoveryRequestRef.current) return;
+
       console.log('[MapView] Discovered places:', discoveredPlaces?.length || 0, 'places');
 
-      if (discoveredPlaces && discoveredPlaces.length > 0) {
+      if (discoveredPlaces.length > 0) {
         console.log('[MapView] Calling onDiscoverPlaces with', discoveredPlaces.length, 'places');
-        // Send discovered places to parent
-        onDiscoverPlaces(discoveredPlaces, locationData);
+        onDiscoverPlacesRef.current?.(discoveredPlaces, locationData);
 
         // Hide discover button for a while to prevent spam
         setShowDiscoverButton(false);
