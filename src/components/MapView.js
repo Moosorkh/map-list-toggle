@@ -35,6 +35,12 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
   const initializedRef = useRef(false);
   const isUpdatingViewportRef = useRef(false);
   const discoveryInFlightRef = useRef(false);
+  const discoveryRequestRef = useRef(0);
+  const mapGenerationRef = useRef(0);
+
+  placesRef.current = places;
+  onViewportChangeRef.current = onViewportChange;
+  onDiscoverPlacesRef.current = onDiscoverPlaces;
 
   // Initialize map - only runs once
   useEffect(() => {
@@ -303,6 +309,9 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
 
     // Guard against overlapping/duplicate discovery (e.g. React StrictMode double-effects)
     if (!currentBoundsRef.current || !currentCenterRef.current || isDiscovering || discoveryInFlightRef.current) return;
+    const requestId = ++discoveryRequestRef.current;
+    const searchBounds = { ...currentBoundsRef.current };
+    const searchCenter = [...currentCenterRef.current];
     discoveryInFlightRef.current = true;
 
     console.log('[MapView] Starting discovery...');
@@ -356,8 +365,10 @@ const MapView = ({ places, onViewportChange, onDiscoverPlaces, onSelectPlace }) 
         alert('Failed to discover places. Please try again.');
       }
     } finally {
-      discoveryInFlightRef.current = false;
-      setIsDiscovering(false);
+      if (requestId === discoveryRequestRef.current) {
+        discoveryInFlightRef.current = false;
+        setIsDiscovering(false);
+      }
     }
   };
 
