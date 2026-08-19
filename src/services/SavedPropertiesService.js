@@ -2,8 +2,9 @@
  * SavedPropertiesService - Manages saved properties with backend sync
  * Supports both authenticated (backend) and guest (localStorage) modes
  */
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = API_BASE_URL;
 const STORAGE_KEY = 'savedProperties';
 
 /**

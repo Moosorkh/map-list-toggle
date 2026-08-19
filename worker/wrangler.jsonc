@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "map-list-toggle-api",
+	"main": "src/index.js",
+	"compatibility_date": "2026-08-19",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"head_sampling_rate": 1
+		}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "map-list-toggle-db",
+			"database_id": "ec8dec88-89a0-48bb-9590-b1a0ad56549f",
+			"migrations_dir": "migrations"
+		}
+	]
+}

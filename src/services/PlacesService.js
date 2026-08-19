@@ -2,8 +2,9 @@
  * PlacesService - Handles fetching hospitality places from backend API
  * This replaces the fake data generation and provides real inventory
  */
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = API_BASE_URL;
 
 /**
  * Search for places within a geographic area
